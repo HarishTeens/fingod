@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m http.server:*)",
+      "Bash(python3 serve.py:*)",
+      "Bash(open http://localhost:*)",
+      "Bash(xdg-open http://localhost:*)",
+      "Bash(python3 -m json.tool:*)",
+      "Bash(node --test:*)"
+    ],
+    "deny": [
+      "mcp__kite__place_order",
+      "mcp__kite__modify_order",
+      "mcp__kite__cancel_order",
+      "mcp__kite__place_gtt_order",
+      "mcp__kite__modify_gtt_order",
+      "mcp__kite__delete_gtt_order"
+    ]
+  }
+}

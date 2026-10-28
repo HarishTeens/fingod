@@ -118,7 +118,9 @@ only hides which one is wrong:
 - Your data stays on your machine: in your browser's SQLite database, and in `data/`, which is
   gitignored. There is no account, server, telemetry or analytics.
 - Every connector is read-only. The refresh routine never calls `place_order`, `modify_order`,
-  `cancel_order` or the GTT equivalents.
+  `cancel_order` or the GTT equivalents, and `.claude/settings.json` **denies those Kite tools
+  outright**, so Claude Code refuses them even if an instruction asked for one. The same file
+  pre-approves only the local server, `localhost` links and the tests.
 - `serve.py` binds to `127.0.0.1` only.
 - The database lives in browser storage, so clearing site data erases it. **Data → Download backup**
   saves a `.sqlite` file you can restore anywhere.
