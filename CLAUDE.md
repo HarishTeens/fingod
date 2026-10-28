@@ -13,8 +13,8 @@ The browser cannot speak MCP, so **you** are the connector. The `/refresh` skill
 into `data/`; the app imports them automatically. Read [docs/DATA-FORMAT.md](docs/DATA-FORMAT.md) before
 writing any, and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before changing `src/compute/`.
 
-If a user asks you to "set up fingod", follow [docs/ONBOARDING.md](docs/ONBOARDING.md): onboarding is a conversation in the
-terminal, and the browser only shows the result. [PROMPT.md](PROMPT.md) is the prompt that points here.
+If a user asks you to "set up fingod", follow [docs/ONBOARDING.md](docs/ONBOARDING.md): onboarding is a short form in the
+terminal (selectable questions, then a submit step), and the browser only shows the result. [PROMPT.md](PROMPT.md) is the prompt that points here.
 
 ## Hard rules
 
