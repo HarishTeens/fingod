@@ -3,7 +3,7 @@
 // files arrive in data/. Manual figures (Bitcoin, FDs, Splitwise) are entered here.
 import { connectorStatus, hasData, fixedDeposits, splitwise, targets, manualBtc } from '../repo.js'
 import { getSetting, setSetting } from '../db.js'
-import { syncInbox, setManualHolding, saveFixedDeposit, deleteFixedDeposit, saveSplitwise, deleteSplitwise, createManualCheckpoint, ingestAny, IngestError } from '../ingest.js'
+import { syncInbox, inboxFailures, setManualHolding, saveFixedDeposit, deleteFixedDeposit, saveSplitwise, deleteSplitwise, createManualCheckpoint, ingestAny, IngestError } from '../ingest.js'
 import { CONNECTORS, MASTER } from '../prompts.js'
 import { loadDemo } from '../demo.js'
 import { esc, money, sleeveLabel } from './format.js'
@@ -44,7 +44,7 @@ const promptBox = (text, id) => `<div class="prompt"><pre id="${id}">${esc(text)
 const statusBox = (id) => `<div class="status" data-status="${id}"><span class="spin"></span><span>Waiting for your agent…</span></div>`
 
 function serverNote() {
-  return `<p class="note" data-serverless hidden>The app can't see the <code>data/</code> folder because it isn't running under <code>serve.py</code>. Start it with <code>python3 serve.py</code>, or drop the JSON files onto the box on the last step.</p>`
+  return `<p class="note" data-serverless hidden>The app can't see the <code>data/</code> folder because it isn't being served by a local server. From the repo folder run <code>python3 -m http.server 8000 --bind 127.0.0.1</code> and open <code>http://localhost:8000</code>, or drop the JSON files onto the box on the last step.</p>`
 }
 
 // --- step bodies ------------------------------------------------------------------
@@ -125,7 +125,13 @@ async function refreshStatus(el, steps, idx) {
     if (CONNECTORS[step.id]) msg = CONNECTORS[step.id].done(st)
     if (step.id === 'finish') msg = st.checkpoint ? `Checkpoint received · as of ${st.checkpoint}` : null
     box.classList.toggle('ok', !!msg)
-    box.innerHTML = msg ? `<span class="tickmark">✓</span><span>Received: ${esc(msg)}</span>` : `<span class="spin"></span><span>${noServer ? 'Not running under serve.py yet' : 'Waiting for your agent…'}</span>`
+    box.innerHTML = msg ? `<span class="tickmark">✓</span><span>Received: ${esc(msg)}</span>` : `<span class="spin"></span><span>${noServer ? 'Not served by a local server yet' : 'Waiting for your agent…'}</span>`
+  }
+  el.querySelector('.errs')?.remove()
+  const bad = inboxFailures()
+  if (bad.length) {
+    const target = box || el.querySelector('[data-checklist]')
+    target?.insertAdjacentHTML('afterend', `<div class="errs"><b>${bad.length} file${bad.length > 1 ? 's' : ''} in data/ couldn't be imported</b>${bad.map((b) => `<div><code>${esc(b.path)}</code> ${esc(b.error)}</div>`).join('')}<div class="muted">Fix the named field and it imports on its own.</div></div>`)
   }
   el.querySelectorAll('[data-check]').forEach((li) => {
     const id = li.dataset.check

@@ -63,3 +63,6 @@ input:focus-visible { outline: 2px solid var(--ring-strong); outline-offset: 1px
 .log { background: var(--page); border: 1px solid var(--ring); border-radius: 10px; padding: 10px 12px; font-size: 12px; white-space: pre-wrap; color: var(--ink-2); margin: 12px 0 0; min-height: 24px; }
 @media (max-width: 640px) { .panel { padding: 24px 20px; } .panel h1 { font-size: 28px; } .prompt pre { margin-right: 0; margin-bottom: 40px; } .prompt .btn { top: auto; bottom: 12px; } }
 .callout { border-left: 3px solid var(--ink-2); background: rgba(127,127,127,.07); padding: 10px 14px; border-radius: 0 10px 10px 0; font-size: 13.5px; color: var(--ink-2); margin: 0 0 14px; max-width: 700px; }
+.errs { margin-top: 12px; border: 1px solid var(--critical); border-radius: 12px; padding: 11px 14px; font-size: 13px; color: var(--ink-2); }
+.errs b { display: block; color: var(--critical); margin-bottom: 6px; }
+.errs div { margin: 3px 0; word-break: break-word; }

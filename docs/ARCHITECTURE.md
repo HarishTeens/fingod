@@ -10,7 +10,7 @@ Your coding agent (Claude Code, etc.)
    ├─ Kite MCP        → Indian equity, Indian mutual funds
    ├─ INDmoney MCP    → US equity, EPF
    └─ asks you        → Bitcoin
-        └──► writes JSON into data/  ──►  serve.py lists it  ──►  the browser imports it into SQLite
+        └──► writes JSON into data/  ──►  a local server lists it  ──►  the browser imports it into SQLite
                                                                         └──► dashboard
 ```
 
@@ -19,7 +19,7 @@ Your coding agent (Claude Code, etc.)
 | `index.html` + `src/` | The app: ES modules loaded natively, no bundler |
 | `vendor/sql-wasm.*` | [sql.js](https://github.com/sql-js/sql.js): SQLite compiled to WebAssembly (MIT) |
 | IndexedDB | Where the database file is persisted between visits |
-| `serve.py` | A static file server that also lists `data/` at `/data/manifest.json` |
+| a local static server | `python3 -m http.server` is enough; the app reads `data/` from its directory listings. `serve.py` is an optional variant that adds `/data/manifest.json` |
 | `data/` | The hand-off folder between your agent and the browser. Gitignored. |
 
 **Why a hand-off folder?** Browsers cannot speak MCP, and your broker credentials should never touch a
@@ -176,4 +176,4 @@ honest:
 - Wallet balances that are not bank-synced are running totals of manual entries and can drift from the
   real bank balance. The drift is carried, not corrected here.
 - The database lives in browser storage. Clearing site data erases it, so keep a backup.
-- Needs a modern browser (Chrome, Edge, Safari, Firefox) and Python 3 for `serve.py`.
+- Needs a modern browser (Chrome, Edge, Safari, Firefox) and Python 3 for its built-in static server.

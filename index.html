@@ -13,6 +13,6 @@
 <div id="root"><div class="app"><div class="empty">Starting…</div></div></div>
 <noscript>fingod needs JavaScript. It runs entirely in your browser.</noscript>
 <script src="vendor/sql-wasm.js"></script>
-<script type="module" src="src/main.js"></script>
+<script type="module" src="src/main.js" onerror="var n=+sessionStorage.fingodRetry||0;if(n<3){sessionStorage.fingodRetry=n+1;setTimeout(function(){location.reload()},500)}"></script>
 </body>
 </html>

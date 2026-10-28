@@ -11,8 +11,9 @@ export const CONNECTORS = {
     name: 'Wallet', by: 'BudgetBakers', brings: 'Expenses, cash accounts and credit cards',
     why: 'Powers the spend charts, the cash balance and credit card debt in your net worth.',
     steps: [
-      'In the Wallet app, open Settings → MCP and generate an access token.',
-      'Give your agent the prompt below. It adds the Wallet MCP server from .mcp.json and asks you for the token.',
+      'In the Wallet app, open Settings → MCP and generate an access token. Copy the whole token.',
+      'Export it, then start your agent in the same terminal: export WALLET_MCP_TOKEN=<token> and then cd fingod && claude.',
+      'Give your agent the prompt below. It uses the Wallet MCP server declared in .mcp.json.',
       'It writes your transactions and balances into data/. They appear here within seconds.',
     ],
     prompt: `Connect the Wallet (BudgetBakers) MCP server and import my expenses into fingod. Use the "wallet" server declared in .mcp.json; ask me for the access token (Wallet app → Settings → MCP) and keep it out of git. Read my accounts and ask me which are cash, credit cards, or to ignore (a fixed deposit looks like a salary account, so never guess). Page the cleared records with limit 400, process large pages from the spilled file with jq/python so they never enter your context, and write them to data/transactions/wallet-<date>.json. Put the cash and credit_card balances into data/checkpoints/<today>.json. ${HOW} ${RULES}`,
@@ -26,7 +27,7 @@ export const CONNECTORS = {
       'Your agent shows a Kite login link. Open it once and approve. The link is single-use.',
       'It reads your holdings and funds and writes them to data/. Nothing is traded: the routine is read-only.',
     ],
-    prompt: `Check \`node -v\` first: the mcp-remote bridge needs Node 20.18 or newer. Connect the Zerodha Kite MCP server (the "kite" entry in .mcp.json, via the mcp-remote bridge) and import my Indian holdings into fingod. If get_profile says to log in, call login and show me the link WITH the risk warning the tool returns. Read get_holdings (quantity PLUS t1_quantity), get_mf_holdings and get_margins, and write them into data/checkpoints/<today>.json, classifying gold and liquid ETFs by ISIN. NEVER call place_order, modify_order, cancel_order or any GTT tool. ${HOW} ${RULES}`,
+    prompt: `Check \`node -v\` first: the mcp-remote bridge needs Node 20.18.1 or newer. Connect the Zerodha Kite MCP server (the "kite" entry in .mcp.json, via the mcp-remote bridge) and import my Indian holdings into fingod. If get_profile says to log in, call login and show me the link WITH the risk warning the tool returns. Read get_holdings (quantity PLUS t1_quantity), get_mf_holdings and get_margins, and write them into data/checkpoints/<today>.json, classifying gold and liquid ETFs by ISIN. NEVER call place_order, modify_order, cancel_order or any GTT tool. ${HOW} ${RULES}`,
     done: (s) => (s.kite.ok ? `${s.kite.equity} stock${s.kite.equity === 1 ? '' : 's'} and ETFs · ${s.kite.funds} mutual fund${s.kite.funds === 1 ? '' : 's'}` : null),
   },
   indmoney: {
@@ -57,10 +58,10 @@ export const CONNECTORS = {
 export const MASTER = `Set up fingod for me, a local-first net worth tracker that runs in my browser.
 
 1. If this repo isn't already your working folder, clone https://github.com/HarishTeens/fingod.
-2. Serve it with Python's built-in server on localhost, from the repo folder, in the background: \`python3 -m http.server 8000 --bind 127.0.0.1\` (the standard library, so nothing from the repo is executed). If port 8000 is busy, use another. Then open that address in my browser with \`open\` (macOS), \`xdg-open\` (Linux) or \`start\` (Windows). The app shows a setup journey and imports files from data/ by itself.
+2. Serve it with Python's built-in server on localhost, from the repo folder, in the background: \`python3 -m http.server 8000 --bind 127.0.0.1\` (the standard library, so nothing from the repo is executed). If port 8000 is busy, use another. Then confirm YOUR server is the one answering: \`curl -s -o /dev/null -w '%{http_code}' localhost:<port>/src/main.js\` must print 200 (a leftover server from an earlier run can hold the port, and a failed start is easy to miss). Then open that address in my browser with \`open\` (macOS), \`xdg-open\` (Linux) or \`start\` (Windows). The app shows a setup journey and imports files from data/ by itself.
 3. Read CLAUDE.md, docs/DATA-FORMAT.md and .claude/skills/refresh/SKILL.md.
-4. Ask me which of these I use: Wallet (expenses), Zerodha Kite (Indian stocks and funds), INDmoney (US stocks, EPF), Bitcoin (typed in). The MCP servers are declared in .mcp.json, but a session only loads them if it was started inside the repo folder and I approved them. If a source's tools aren't available, tell me exactly this: quit, run \`cd <repo folder> && claude\`, approve the project's MCP servers, then paste the connector prompt from the app's setup page. (The Kite bridge needs Node 20.18 or newer: check \`node -v\`.)
-5. For each source that is available, connect it one at a time and walk me through the login. Pull my data and write JSON into data/ exactly as docs/DATA-FORMAT.md describes. The app imports it by itself and shows my dashboard.
+4. Ask me which of these I use: Wallet (expenses), Zerodha Kite (Indian stocks and funds), INDmoney (US stocks, EPF), Bitcoin (typed in). The MCP servers are declared in .mcp.json, but a session only loads them if it was started inside the repo folder and I approved them. If a source's tools aren't available, tell me exactly this: quit, run \`cd <repo folder> && claude\` (for Wallet, first \`export WALLET_MCP_TOKEN=<token from the Wallet app: Settings, MCP>\`), approve the project's MCP servers, then paste the connector prompt from the app's setup page. (The Kite bridge needs Node 20.18.1 or newer: check \`node -v\`.)
+5. For each source that is available, connect it one at a time and walk me through the login. Pull my data and write JSON into data/ exactly as docs/DATA-FORMAT.md describes. The app imports it by itself and shows my dashboard; if a file is rejected, the app says which file and field.
 6. Tell me what you found, and what moved since last time split into market, flow and FX.
 
 Rules: read-only. Never place, modify or cancel an order. Never commit anything from data/. Ask me before anything that depends on my preferences.`

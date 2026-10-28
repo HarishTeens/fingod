@@ -1,6 +1,6 @@
 import { connectorStatus, checkpoints, fixedDeposits, splitwise, targets, transactionCount } from '../repo.js'
 import { exportBytes, importBytes, reset, getSetting } from '../db.js'
-import { syncInbox, ingestAny, IngestError } from '../ingest.js'
+import { syncInbox, ingestAny, inboxFailures, IngestError } from '../ingest.js'
 import { checkpointPrompt } from '../prompts.js'
 import { isDemo } from '../demo.js'
 import { esc, shortDate, money, sleeveLabel } from './format.js'
@@ -11,7 +11,8 @@ async function copy(text, btn) {
 }
 
 export function render(el) {
-  const draw = (log = '') => {
+  const failureLog = () => inboxFailures().map((f) => `✗ ${f.path}: ${f.error}`).join('\n')
+  const draw = (log = failureLog()) => {
     const cps = checkpoints(), st = connectorStatus()
     el.innerHTML = `<div class="grid" style="gap:16px;max-width:860px">
     <section class="card"><header><h2>Take a checkpoint</h2></header>
@@ -25,13 +26,13 @@ export function render(el) {
         <tr><td class="name">Fixed deposits</td><td class="num">${fixedDeposits().length} <a class="btn" href="#/welcome?step=extras">edit</a></td></tr>
         <tr><td class="name">Splitwise people</td><td class="num">${splitwise().length} <a class="btn" href="#/welcome?step=extras">edit</a></td></tr>
         <tr><td class="name">Bitcoin (manual)</td><td class="num">${st.btc.ok ? 'set' : '—'} <a class="btn" href="#/welcome?step=btc">edit</a></td></tr>
-        <tr><td class="name">Allocation targets</td><td class="num">${Object.entries(targets()).map(([k, v]) => `${esc(sleeveLabel(k))} ${v}%`).join(' · ')} <a class="btn" href="#/welcome?step=targets">edit</a></td></tr>
+        <tr><td class="name">Allocation targets${getSetting('target_allocation', null) === null ? ' <span class="muted">(defaults, not set yet)</span>' : ''}</td><td class="num">${Object.entries(targets()).map(([k, v]) => `${esc(sleeveLabel(k))} ${v}%`).join(' · ')} <a class="btn" href="#/welcome?step=targets">edit</a></td></tr>
       </tbody></table></section>
 
     <section class="card"><header><h2>Import files</h2></header>
-      <p class="hero-secondary" style="margin-top:0">Files in <code>data/</code> import by themselves while <code>serve.py</code> is running. You can also import by hand: a checkpoint or transactions JSON from your agent, or a backup you exported.</p>
+      <p class="hero-secondary" style="margin-top:0">Files in <code>data/</code> import by themselves while the app is served from a local server (<code>python3 -m http.server 8000 --bind 127.0.0.1</code>). You can also import by hand: a checkpoint or transactions JSON from your agent, or a backup you exported.</p>
       <div class="actions"><button class="btn" data-sync>Sync now</button><button class="btn" data-pick>Choose files…</button><input type="file" multiple accept=".json,.sqlite,.db" hidden data-file></div>
-      <pre class="log" data-log>${esc(log)}</pre></section>
+      <pre class="log" data-log>${esc(log)}</pre>${inboxFailures().length ? '<p class="note" style="color:var(--critical)">These files are in data/ but were not imported. Fix the named field and it imports on the next sync.</p>' : ''}</section>
 
     <section class="card"><header><h2>Backup & reset</h2></header>
       <p class="hero-secondary" style="margin-top:0">Your database lives in this browser's storage. Clearing site data would erase it, so keep a backup.</p>
@@ -44,7 +45,7 @@ export function render(el) {
     const c = e.target.closest('[data-copy]'); if (c) copy(el.querySelector(`#${c.dataset.copy}`).textContent, c)
     if (e.target.closest('[data-sync]')) {
       const r = await syncInbox()
-      logTo(!r.available ? 'The app is not running under serve.py, so it cannot see data/. Start it with: python3 serve.py' : `${r.imported.length} file(s) imported, ${r.errors.length} error(s), ${r.total} in data/.\n${r.imported.map((i) => `✓ ${i.path}`).join('\n')}${r.errors.map((x) => `\n✗ ${x.path}: ${x.error}`).join('')}`)
+      logTo(!r.available ? 'The app is not being served by a local server, so it cannot see data/. From the repo folder run: python3 -m http.server 8000 --bind 127.0.0.1, then open http://localhost:8000' : `${r.imported.length} file(s) imported, ${r.errors.length} error(s), ${r.total} in data/.\n${r.imported.map((i) => `✓ ${i.path}`).join('\n')}${r.errors.map((x) => `\n✗ ${x.path}: ${x.error}`).join('')}`)
     }
     if (e.target.closest('[data-pick]')) el.querySelector('[data-file]').click()
     if (e.target.closest('[data-export]')) {

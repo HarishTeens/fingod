@@ -15,7 +15,7 @@
       "headers": {
         "Authorization": "Bearer ${WALLET_MCP_TOKEN}"
       },
-      "comment": "Verified working over plain streamable HTTP with the access token. Needs WALLET_MCP_TOKEN exported \u2014 use `make claude`, which sources .env first."
+      "comment": "Plain streamable HTTP with the access token from the Wallet app (Settings, MCP). Paste the WHOLE token: export WALLET_MCP_TOKEN=<token> in the terminal, then start `claude` from this folder. A truncated token is rejected with HTTP 401."
     },
     "indmoney": {
       "type": "http",

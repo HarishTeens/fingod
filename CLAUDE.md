@@ -6,7 +6,7 @@ Guidance for Claude Code (and any coding agent) working in this repository.
 
 fingod is a **local-first net worth and portfolio tracker that runs entirely in the browser**: vanilla
 ES modules, SQLite compiled to WebAssembly (`sql.js`, vendored), no backend, no database server, no
-build step, no npm dependencies. You clone it and run `python3 serve.py`.
+build step, no npm dependencies. You clone it and run Python's built-in static server.
 
 The browser cannot speak MCP, so **you** are the connector. The `/refresh` skill
 (`.claude/skills/refresh/SKILL.md`) reads Wallet, Zerodha Kite and INDmoney over MCP and writes JSON files

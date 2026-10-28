@@ -25,9 +25,13 @@ Weekly, or whenever asked. **It never polls.**
 
 ## 0. Preflight
 
-1. **Is the app running?** `curl -s localhost:8000/data/manifest.json`. If the connection is refused,
-   start it in the background with `python3 serve.py` and tell the user to open
-   <http://localhost:8000>. They watch the app fill in as you write files.
+1. **Is the app running?** Use the port the user's server is on (8000 unless told otherwise) and check
+   that it serves *this* repo: `curl -s -o /dev/null -w '%{http_code}' localhost:8000/src/main.js` must
+   print `200`. A refused connection or another status means it isn't up, or a leftover server holds the
+   port. Start it from the repo folder, in the background, with
+   `python3 -m http.server 8000 --bind 127.0.0.1` (the standard library; `python3 serve.py` also works),
+   re-run the check, and tell the user to open <http://localhost:8000>. They watch the app fill in as you
+   write files. A file the app cannot import is reported on its Data page with the file and field named.
 2. **Find the last checkpoint.** Read the newest file in `data/checkpoints/` (none means this is a
    first run). You need its `as_of_date`, its `usd_inr`, and `previous_manual`: the `BTC` holding's
    `qty`, `price`, `avg_cost` and `invested_inr`, offered as the default in §4.

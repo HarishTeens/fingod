@@ -19,10 +19,10 @@ and MCP support:
 Set up fingod for me, a local-first net worth tracker that runs in my browser.
 
 1. If this repo isn't already your working folder, clone https://github.com/HarishTeens/fingod.
-2. Serve it with Python's built-in server on localhost, from the repo folder, in the background: `python3 -m http.server 8000 --bind 127.0.0.1` (the standard library, so nothing from the repo is executed). If port 8000 is busy, use another. Then open that address in my browser with `open` (macOS), `xdg-open` (Linux) or `start` (Windows). The app shows a setup journey and imports files from data/ by itself.
+2. Serve it with Python's built-in server on localhost, from the repo folder, in the background: `python3 -m http.server 8000 --bind 127.0.0.1` (the standard library, so nothing from the repo is executed). If port 8000 is busy, use another. Then confirm YOUR server is the one answering: `curl -s -o /dev/null -w '%{http_code}' localhost:<port>/src/main.js` must print 200 (a leftover server from an earlier run can hold the port, and a failed start is easy to miss). Then open that address in my browser with `open` (macOS), `xdg-open` (Linux) or `start` (Windows). The app shows a setup journey and imports files from data/ by itself.
 3. Read CLAUDE.md, docs/DATA-FORMAT.md and .claude/skills/refresh/SKILL.md.
-4. Ask me which of these I use: Wallet (expenses), Zerodha Kite (Indian stocks and funds), INDmoney (US stocks, EPF), Bitcoin (typed in). The MCP servers are declared in .mcp.json, but a session only loads them if it was started inside the repo folder and I approved them. If a source's tools aren't available, tell me exactly this: quit, run `cd <repo folder> && claude`, approve the project's MCP servers, then paste the connector prompt from the app's setup page. (The Kite bridge needs Node 20.18 or newer: check `node -v`.)
-5. For each source that is available, connect it one at a time and walk me through the login. Pull my data and write JSON into data/ exactly as docs/DATA-FORMAT.md describes. The app imports it by itself and shows my dashboard.
+4. Ask me which of these I use: Wallet (expenses), Zerodha Kite (Indian stocks and funds), INDmoney (US stocks, EPF), Bitcoin (typed in). The MCP servers are declared in .mcp.json, but a session only loads them if it was started inside the repo folder and I approved them. If a source's tools aren't available, tell me exactly this: quit, run `cd <repo folder> && claude` (for Wallet, first `export WALLET_MCP_TOKEN=<token from the Wallet app: Settings, MCP>`), approve the project's MCP servers, then paste the connector prompt from the app's setup page. (The Kite bridge needs Node 20.18.1 or newer: check `node -v`.)
+5. For each source that is available, connect it one at a time and walk me through the login. Pull my data and write JSON into data/ exactly as docs/DATA-FORMAT.md describes. The app imports it by itself and shows my dashboard; if a file is rejected, the app says which file and field.
 6. Tell me what you found, and what moved since last time split into market, flow and FX.
 
 Rules: read-only. Never place, modify or cancel an order. Never commit anything from data/. Ask me before anything that depends on my preferences.
@@ -40,7 +40,7 @@ python3 serve.py        # → http://localhost:8000
 ```
 
 Open it and choose **Explore with demo data**, or go to `http://localhost:8000/?demo`. There is nothing to
-install: no npm, no bundler. You need Python 3 (only for `serve.py`, a tiny static file server) and a
+install: no npm, no bundler. You need Python 3 (only for its built-in static file server) and a
 modern browser.
 
 ![The setup journey: choose Wallet, Kite, INDmoney, EPF and Bitcoin](landing/shots/onboarding.png)
@@ -73,7 +73,7 @@ Your coding agent
    ├─ Kite MCP        → Indian equity, Indian mutual funds
    ├─ INDmoney MCP    → US equity, EPF
    └─ asks you        → Bitcoin
-        └──► writes JSON into data/  ──►  serve.py lists it  ──►  the browser imports it into SQLite
+        └──► writes JSON into data/  ──►  a local server lists it  ──►  the browser imports it into SQLite
 ```
 
 Browsers can't speak MCP, and your broker credentials should never touch a web page. So **your assistant
@@ -121,7 +121,7 @@ only hides which one is wrong:
   `cancel_order` or the GTT equivalents, and `.claude/settings.json` **denies those Kite tools
   outright**, so Claude Code refuses them even if an instruction asked for one. The same file
   pre-approves only the local server, `localhost` links and the tests.
-- `serve.py` binds to `127.0.0.1` only.
+- The local server binds to `127.0.0.1` only (`--bind 127.0.0.1`; `serve.py` does the same).
 - The database lives in browser storage, so clearing site data erases it. **Data → Download backup**
   saves a `.sqlite` file you can restore anywhere.
 - Never commit anything from `data/`, and never commit a screenshot of your own dashboard.

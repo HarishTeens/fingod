@@ -139,6 +139,10 @@ const INBOX_DIRS = ['checkpoints', 'standing', 'transactions']
 /** serve.py lists data/ at /data/manifest.json. Any plain static server (python3 -m
  * http.server, which runs nothing from this repo) lists directories as HTML
  * instead, so fall back to reading those, with HEAD for each file's size and mtime. */
+const failures = new Map() // path -> message, for files that arrived but could not be imported
+/** Files that failed to import on the latest sync, so the UI can say so. */
+export const inboxFailures = () => [...failures].map(([path, error]) => ({ path, error }))
+
 let hasManifest = true // once /data/manifest.json 404s, stop asking: it only exists under serve.py
 async function listInbox() {
   if (hasManifest) {
@@ -181,9 +185,11 @@ export async function syncInbox() {
       const res = await fetch(`data/${f.path}`, { cache: 'no-store' })
       const result = ingestAny(await res.json())
       write((run) => run('INSERT INTO imported_files (path, fingerprint, imported_at) VALUES (?,?,?) ON CONFLICT(path) DO UPDATE SET fingerprint = excluded.fingerprint, imported_at = excluded.imported_at', [f.path, fingerprint, new Date().toISOString()]))
+      failures.delete(f.path)
       imported.push({ path: f.path, ...result })
-    } catch (e) { errors.push({ path: f.path, error: e.message }) }
+    } catch (e) { failures.set(f.path, e.message); errors.push({ path: f.path, error: e.message }) }
   }
+  for (const p of [...failures.keys()]) if (!files.some((f) => f.path === p)) failures.delete(p) // the file was removed
   return { available: true, imported, errors, total: files.length }
 }
 
