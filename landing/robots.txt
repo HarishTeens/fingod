@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://fingod.harishteens.workers.dev/sitemap.xml
