@@ -150,7 +150,21 @@ export function render(el, { onDone }) {
     idx = Math.max(0, steps.findIndex((x) => x.id === s.goto)); delete s.goto; save(s)
   }
 
-  const go = (n) => { idx = Math.max(0, Math.min(steps.length - 1, n)); s.step = idx; save(s); draw() }
+  // Whatever is typed into the current step is kept when you move on, whether or not
+  // you pressed that form's own Save button. Forgetting someone's entries is the one
+  // thing a setup journey must never do.
+  const formData = (name) => { const f = el.querySelector(`[data-form="${name}"]`); return f ? Object.fromEntries(new FormData(f)) : null }
+  const saveTargets = (d) => { const t = {}; for (const [k, v] of Object.entries(d)) if (Number(v) > 0) t[k] = Number(v); setSetting('target_allocation', t) }
+  function flush() {
+    try {
+      const t = formData('targets'); if (t) saveTargets(t)
+      const b = formData('btc'); if (b && Number(b.qty) > 0 && Number(b.value) > 0) setManualHolding({ qty: b.qty, value: b.value, invested_inr: b.invested || null })
+      const fd = formData('fd'); if (fd && fd.bank && fd.principal && fd.rate_pct && fd.start_date) { saveFixedDeposit(fd); el.querySelector('[data-form="fd"]').reset() }
+      const sw = formData('sw'); if (sw && sw.person && sw.amount !== '') { saveSplitwise(sw.person, sw.amount, sw.note); el.querySelector('[data-form="sw"]').reset() }
+    } catch (err) { console.error('could not keep this step\'s entries', err) }
+  }
+
+  const go = (n) => { flush(); idx = Math.max(0, Math.min(steps.length - 1, n)); s.step = idx; save(s); draw() }
 
   function draw() {
     clearInterval(timer)
@@ -180,11 +194,15 @@ export function render(el, { onDone }) {
     submit('btc', (d, f) => { setManualHolding({ qty: d.qty, value: d.value, invested_inr: d.invested || null }); flash(f, 'Saved ✓') })
     submit('fd', (d, f) => { saveFixedDeposit(d); draw() })
     submit('sw', (d) => { saveSplitwise(d.person, d.amount, d.note); draw() })
-    submit('targets', (d, f) => { const t = {}; for (const [k, v] of Object.entries(d)) if (Number(v) > 0) t[k] = Number(v); setSetting('target_allocation', t); flash(f, 'Saved ✓') })
+    submit('targets', (d, f) => { saveTargets(d); flash(f, 'Saved ✓') })
     el.querySelectorAll('[data-del-fd]').forEach((b) => (b.onclick = () => { deleteFixedDeposit(Number(b.dataset.delFd)); draw() }))
     el.querySelectorAll('[data-del-sw]').forEach((b) => (b.onclick = () => { deleteSplitwise(b.dataset.delSw); draw() }))
     const tf = el.querySelector('[data-form="targets"]')
-    if (tf) { const upd = () => { tf.querySelector('[data-total]').textContent = [...tf.querySelectorAll('input')].reduce((a, i) => a + Number(i.value || 0), 0) }; tf.oninput = upd; upd() }
+    if (tf) {
+      const upd = () => { tf.querySelector('[data-total]').textContent = [...tf.querySelectorAll('input')].reduce((a, i) => a + Number(i.value || 0), 0) }
+      tf.oninput = () => { upd(); clearTimeout(tf._save); tf._save = setTimeout(() => { saveTargets(Object.fromEntries(new FormData(tf))); flash(tf, 'Saved ✓') }, 400) } // autosave as you type
+      upd()
+    }
 
     const drop = el.querySelector('[data-drop]'), file = el.querySelector('[data-file]')
     if (drop) {
@@ -201,7 +219,7 @@ export function render(el, { onDone }) {
     }
   }
   const summary = ({ kind, as_of_date, transactions, holdings, warnings }) => ({ kind, as_of_date, transactions, holdings, warnings })
-  function finishUp() { clearInterval(timer); s.done = true; save(s); onDone() }
+  function finishUp() { flush(); clearInterval(timer); s.done = true; save(s); onDone() }
 
   draw()
   return () => clearInterval(timer)
