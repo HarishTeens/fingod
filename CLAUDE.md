@@ -33,8 +33,9 @@ If a user asks you to "set up fingod", follow [PROMPT.md](PROMPT.md).
 ## Run, test, screenshot
 
 ```bash
-python3 serve.py                 # http://localhost:8000 — static server + a listing of data/
-open "http://localhost:8000/?demo"   # explore with invented data, no accounts needed
+python3 -m http.server 8000 --bind 127.0.0.1   # the standard library: nothing from this repo is run
+open "http://localhost:8000/?demo"             # explore with invented data, no accounts needed
+python3 serve.py                               # optional: the same, plus a manifest of data/, and it opens a browser
 node --test tests/               # unit tests for the engine and the ingest validation (Node 20+)
 node scripts/screenshot.mjs "http://localhost:8000/?demo#/investments" out.png --full   # Node 22+, Chrome
 ```
@@ -45,7 +46,7 @@ There is nothing to install. Run a single test file with `node --test tests/comp
 
 ```
 index.html           app shell; loads vendor/sql-wasm.js, then src/main.js
-serve.py             static file server; lists data/ at /data/manifest.json
+serve.py             optional static server; lists data/ at /data/manifest.json (plain http.server works too)
 vendor/              sql.js (SQLite → WebAssembly), MIT, committed as-is
 src/main.js          boot, routing, the poll that imports new files
 src/db.js            open the database, persist it to IndexedDB, query helpers

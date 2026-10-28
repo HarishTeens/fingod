@@ -4,7 +4,7 @@
 
 const RULES = `Rules: this is READ-ONLY. Never place, modify or cancel an order, and never write anywhere outside this repo's data/ folder. Money is exact: send qty and price, never a computed total. If a file for today's date already exists in data/checkpoints/, read it and MERGE your parts into it instead of overwriting.`
 
-const HOW = `Follow .claude/skills/refresh/SKILL.md for the field mapping and docs/DATA-FORMAT.md for the file formats.`
+const HOW = `Follow .claude/skills/refresh/SKILL.md for the field mapping and docs/DATA-FORMAT.md for the file formats. If the MCP tools for this source are not available in this session, stop and tell me: this session must be started inside the fingod folder (cd fingod && claude) so it loads .mcp.json, and I must approve the project's MCP servers.`
 
 export const CONNECTORS = {
   wallet: {
@@ -26,7 +26,7 @@ export const CONNECTORS = {
       'Your agent shows a Kite login link. Open it once and approve. The link is single-use.',
       'It reads your holdings and funds and writes them to data/. Nothing is traded: the routine is read-only.',
     ],
-    prompt: `Connect the Zerodha Kite MCP server (the "kite" entry in .mcp.json, via the mcp-remote bridge) and import my Indian holdings into fingod. If get_profile says to log in, call login and show me the link WITH the risk warning the tool returns. Read get_holdings (quantity PLUS t1_quantity), get_mf_holdings and get_margins, and write them into data/checkpoints/<today>.json, classifying gold and liquid ETFs by ISIN. NEVER call place_order, modify_order, cancel_order or any GTT tool. ${HOW} ${RULES}`,
+    prompt: `Check \`node -v\` first: the mcp-remote bridge needs Node 20.18 or newer. Connect the Zerodha Kite MCP server (the "kite" entry in .mcp.json, via the mcp-remote bridge) and import my Indian holdings into fingod. If get_profile says to log in, call login and show me the link WITH the risk warning the tool returns. Read get_holdings (quantity PLUS t1_quantity), get_mf_holdings and get_margins, and write them into data/checkpoints/<today>.json, classifying gold and liquid ETFs by ISIN. NEVER call place_order, modify_order, cancel_order or any GTT tool. ${HOW} ${RULES}`,
     done: (s) => (s.kite.ok ? `${s.kite.equity} stock${s.kite.equity === 1 ? '' : 's'} and ETFs · ${s.kite.funds} mutual fund${s.kite.funds === 1 ? '' : 's'}` : null),
   },
   indmoney: {
@@ -54,13 +54,14 @@ export const CONNECTORS = {
 }
 
 /** The one prompt that sets everything up. */
-export const MASTER = `Set up fingod for me, a local-first net worth tracker. If this repo isn't already in your working folder, clone https://github.com/HarishTeens/fingod and work from there. Then:
+export const MASTER = `Set up fingod for me, a local-first net worth tracker that runs in my browser.
 
-1. Start it with \`python3 serve.py\` (leave it running) and open http://localhost:8000 for me.
-2. Read CLAUDE.md, docs/DATA-FORMAT.md and .claude/skills/refresh/SKILL.md.
-3. Ask me which of these I use: Wallet (expenses), Zerodha Kite (Indian stocks and funds), INDmoney (US stocks, EPF), Bitcoin (manual). Connect only those, one at a time, using the MCP servers declared in .mcp.json. Walk me through each login.
-4. Pull my data and write it as JSON into the data/ folder, exactly as docs/DATA-FORMAT.md describes. The app imports it by itself and shows my dashboard.
-5. Tell me what you found, and what moved since last time split into market, flow and FX.
+1. If this repo isn't already your working folder, clone https://github.com/HarishTeens/fingod.
+2. Serve it with Python's built-in server on localhost, from the repo folder, in the background: \`python3 -m http.server 8000 --bind 127.0.0.1\` (the standard library, so nothing from the repo is executed). If port 8000 is busy, use another. Then open that address in my browser with \`open\` (macOS), \`xdg-open\` (Linux) or \`start\` (Windows). The app shows a setup journey and imports files from data/ by itself.
+3. Read CLAUDE.md, docs/DATA-FORMAT.md and .claude/skills/refresh/SKILL.md.
+4. Ask me which of these I use: Wallet (expenses), Zerodha Kite (Indian stocks and funds), INDmoney (US stocks, EPF), Bitcoin (typed in). The MCP servers are declared in .mcp.json, but a session only loads them if it was started inside the repo folder and I approved them. If a source's tools aren't available, tell me exactly this: quit, run \`cd <repo folder> && claude\`, approve the project's MCP servers, then paste the connector prompt from the app's setup page. (The Kite bridge needs Node 20.18 or newer: check \`node -v\`.)
+5. For each source that is available, connect it one at a time and walk me through the login. Pull my data and write JSON into data/ exactly as docs/DATA-FORMAT.md describes. The app imports it by itself and shows my dashboard.
+6. Tell me what you found, and what moved since last time split into market, flow and FX.
 
 Rules: read-only. Never place, modify or cancel an order. Never commit anything from data/. Ask me before anything that depends on my preferences.`
 

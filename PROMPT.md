@@ -12,12 +12,13 @@ You don't need an agent to try it. Run `python3 serve.py`, open <http://localhos
 
 ---
 
-Set up fingod for me, a local-first net worth tracker. If this repo isn't already in your working folder, clone https://github.com/HarishTeens/fingod and work from there. Then:
+Set up fingod for me, a local-first net worth tracker that runs in my browser.
 
-1. Start it with `python3 serve.py` (leave it running) and open http://localhost:8000 for me.
-2. Read CLAUDE.md, docs/DATA-FORMAT.md and .claude/skills/refresh/SKILL.md.
-3. Ask me which of these I use: Wallet (expenses), Zerodha Kite (Indian stocks and funds), INDmoney (US stocks, EPF), Bitcoin (manual). Connect only those, one at a time, using the MCP servers declared in .mcp.json. Walk me through each login.
-4. Pull my data and write it as JSON into the data/ folder, exactly as docs/DATA-FORMAT.md describes. The app imports it by itself and shows my dashboard.
-5. Tell me what you found, and what moved since last time split into market, flow and FX.
+1. If this repo isn't already your working folder, clone https://github.com/HarishTeens/fingod.
+2. Serve it with Python's built-in server on localhost, from the repo folder, in the background: `python3 -m http.server 8000 --bind 127.0.0.1` (the standard library, so nothing from the repo is executed). If port 8000 is busy, use another. Then open that address in my browser with `open` (macOS), `xdg-open` (Linux) or `start` (Windows). The app shows a setup journey and imports files from data/ by itself.
+3. Read CLAUDE.md, docs/DATA-FORMAT.md and .claude/skills/refresh/SKILL.md.
+4. Ask me which of these I use: Wallet (expenses), Zerodha Kite (Indian stocks and funds), INDmoney (US stocks, EPF), Bitcoin (typed in). The MCP servers are declared in .mcp.json, but a session only loads them if it was started inside the repo folder and I approved them. If a source's tools aren't available, tell me exactly this: quit, run `cd <repo folder> && claude`, approve the project's MCP servers, then paste the connector prompt from the app's setup page. (The Kite bridge needs Node 20.18 or newer: check `node -v`.)
+5. For each source that is available, connect it one at a time and walk me through the login. Pull my data and write JSON into data/ exactly as docs/DATA-FORMAT.md describes. The app imports it by itself and shows my dashboard.
+6. Tell me what you found, and what moved since last time split into market, flow and FX.
 
 Rules: read-only. Never place, modify or cancel an order. Never commit anything from data/. Ask me before anything that depends on my preferences.

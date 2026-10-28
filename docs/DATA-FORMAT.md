@@ -107,3 +107,22 @@ accounts you said are cash, credit cards, or to ignore, so it doesn't ask again.
 ```jsonc
 { "wallet_account_roles": { "<account id>": { "name": "Bank A", "role": "cash" } } }  // cash | credit_card | ignore
 ```
+
+## Standing rows (optional)
+
+`data/standing/<anything>.json` carries the rows that normally live in the app: fixed deposits, Splitwise
+balances, confirmed trades and the target allocation. It is the way to **bring existing history in**.
+Import is idempotent: a deposit is matched on bank + principal + start date, a trade on
+`(sleeve, symbol, exit_date, invested_inr)`, a person by name.
+
+```jsonc
+{
+  "fixed_deposits": [ { "bank": "Example Bank", "principal": 100000, "rate_pct": 6.5, "start_date": "2026-02-01", "maturity_date": "2027-02-01", "compounding": "quarterly" } ],
+  "splitwise":      [ { "person": "Friend A", "amount_inr": 3000, "note": "" } ],                 // positive = they owe you
+  "trades":         [ { "sleeve": "in_equity", "symbol": "ACME", "exit_date": "2026-06-03", "invested_inr": 18000, "realised_inr": -2200, "holding_days": 60 } ],
+  "target_allocation": { "in_equity": 27, "in_mf": 35, "us_equity": 10, "gold": 5, "btc": 5, "fd": 15, "debt": 2, "liquid": 1 }
+}
+```
+
+A checkpoint file may also carry its own `splitwise` balances. They are then stored as given instead of
+being snapshotted from the standing rows, which is how a history export keeps what was true on each date.

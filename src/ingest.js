@@ -1,7 +1,7 @@
 // Getting data in. Two kinds of file arrive from your coding agent (see
 // docs/DATA-FORMAT.md): checkpoints and Wallet transactions. Both are
 // idempotent — re-importing a file never duplicates anything.
-import { all, first, scalar, write } from './db.js'
+import { all, first, scalar, write, setSetting } from './db.js'
 import { money } from './compute/num.js'
 
 export const SLEEVES = ['in_equity', 'in_mf', 'us_equity', 'gold', 'debt', 'btc']
@@ -32,7 +32,10 @@ export function validateCheckpoint(p) {
   })
   const refs = new Set()
   ;(p.balances || []).forEach((b, i) => {
-    if (b && b.kind === 'splitwise') return // taken from the standing Splitwise rows, never from a payload
+    if (b && b.kind === 'splitwise') { // normally snapshotted from the standing rows; stored as given if a file carries them (history exports)
+      if (!b.ref || !isNum(b.amount_inr)) fail(`balances[${i}]: a splitwise entry needs ref and amount_inr`)
+      return
+    }
     if (!b || !BALANCE_KINDS.includes(b.kind)) fail(`balances[${i}]: kind must be one of ${BALANCE_KINDS.join(', ')}`)
     if (!b.ref) fail(`balances[${i}]: ref is required`)
     if (!isNum(b.amount_inr)) fail(`balances[${i}] (${b.ref}): amount_inr must be a number`)
@@ -71,12 +74,13 @@ export function ingestCheckpoint(p) {
            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
         [id, h.sleeve, h.symbol, h.name || h.symbol, h.isin || null, Number(h.qty), Number(h.price), fx, currency, value, nullable(h.avg_cost), nullable(h.invested_inr)])
     }
+    const carried = (p.balances || []).filter((b) => b.kind === 'splitwise')
     for (const b of p.balances || []) {
-      if (b.kind === 'splitwise') continue
       run('INSERT INTO balances (checkpoint_id, kind, ref, amount_inr, meta) VALUES (?,?,?,?,?)', [id, b.kind, b.ref, Number(b.amount_inr), b.meta ? JSON.stringify(b.meta) : null])
     }
     // Splitwise is a standing row, snapshotted so history keeps what was true then.
-    for (const s of all('SELECT person, amount_inr, note FROM splitwise_balances')) {
+    // A file that carries its own splitwise entries (a history export) wins.
+    if (!carried.length) for (const s of all('SELECT person, amount_inr, note FROM splitwise_balances')) {
       run('INSERT INTO balances (checkpoint_id, kind, ref, amount_inr, meta) VALUES (?,?,?,?,?)', [id, 'splitwise', s.person, s.amount_inr, JSON.stringify({ note: s.note || '' })])
     }
     for (const a of p.wallet_accounts || []) {
@@ -115,6 +119,7 @@ export function ingestTransactions(payload) {
 /** A file's kind, from its contents. */
 export function classify(payload) {
   if (payload && Array.isArray(payload.holdings) && payload.as_of_date) return 'checkpoint'
+  if (payload && !Array.isArray(payload) && ['fixed_deposits', 'splitwise', 'trades', 'target_allocation'].some((k) => k in payload)) return 'standing'
   if (payload && (Array.isArray(payload.transactions) || Array.isArray(payload))) return 'transactions'
   return null
 }
@@ -123,21 +128,51 @@ export function ingestAny(payload) {
   const kind = classify(payload)
   if (kind === 'checkpoint') return { kind, ...ingestCheckpoint(payload) }
   if (kind === 'transactions') return { kind, ...ingestTransactions(payload) }
-  fail('not a fingod file: expected a checkpoint ({as_of_date, holdings}) or {transactions}')
+  if (kind === 'standing') return { kind, ...ingestStanding(payload) }
+  fail('not a fingod file: expected a checkpoint ({as_of_date, holdings}), {transactions} or standing rows')
 }
 
 /** Pull in everything the agent has dropped into data/. Needs serve.py (or any
  * server exposing /data/manifest.json). Returns what changed. */
+const INBOX_DIRS = ['checkpoints', 'standing', 'transactions']
+
+/** serve.py lists data/ at /data/manifest.json. Any plain static server (python3 -m
+ * http.server, which runs nothing from this repo) lists directories as HTML
+ * instead, so fall back to reading those, with HEAD for each file's size and mtime. */
+let hasManifest = true // once /data/manifest.json 404s, stop asking: it only exists under serve.py
+async function listInbox() {
+  if (hasManifest) {
+    try {
+      const res = await fetch('data/manifest.json', { cache: 'no-store' })
+      if (res.ok) { const m = await res.json(); if (Array.isArray(m.files)) return { available: true, files: m.files } }
+      hasManifest = false
+    } catch { /* fall through to directory listings */ }
+  }
+  let reachable = false
+  const files = []
+  for (const dir of INBOX_DIRS) {
+    let res
+    try { res = await fetch(`data/${dir}/`, { cache: 'no-store' }) } catch { continue }
+    if (!res.ok) continue
+    reachable = true
+    const names = [...(await res.text()).matchAll(/href="([^"?#]+\.json)"/g)].map((m) => decodeURIComponent(m[1]).split('/').pop())
+    for (const n of new Set(names)) {
+      const head = await fetch(`data/${dir}/${n}`, { method: 'HEAD', cache: 'no-store' }).catch(() => null)
+      if (head && head.ok) files.push({ path: `${dir}/${n}`, size: head.headers.get('content-length') || '0', mtime: head.headers.get('last-modified') || '0' })
+    }
+  }
+  if (!reachable) { // no subfolders yet: is there a server at all?
+    try { reachable = (await fetch('data/README.md', { cache: 'no-store' })).ok } catch { reachable = false }
+  }
+  return { available: reachable, files }
+}
+
 export async function syncInbox() {
-  let manifest
-  try {
-    const res = await fetch('data/manifest.json', { cache: 'no-store' })
-    if (!res.ok) return { available: false, imported: [], errors: [] }
-    manifest = await res.json()
-  } catch { return { available: false, imported: [], errors: [] } }
+  const { available, files: listed } = await listInbox()
+  if (!available) return { available: false, imported: [], errors: [] }
 
   const imported = [], errors = []
-  const files = (manifest.files || []).filter((f) => f.path.endsWith('.json') && /^(checkpoints|transactions)\//.test(f.path)).sort((a, b) => a.path.localeCompare(b.path))
+  const files = listed.filter((f) => f.path.endsWith('.json') && /^(checkpoints|standing|transactions)\//.test(f.path)).sort((a, b) => a.path.localeCompare(b.path))
   for (const f of files) {
     const fingerprint = `${f.size}:${f.mtime}`
     const seen = first('SELECT fingerprint FROM imported_files WHERE path = ?', [f.path])
@@ -193,6 +228,20 @@ export function saveFixedDeposit(fd) {
       [fd.bank, Number(fd.principal), Number(fd.rate_pct), fd.start_date, fd.maturity_date || null, fd.closed_at || null, fd.compounding || 'quarterly', fd.note || null])
   })
 }
+/** Standing rows from a file: fixed deposits, Splitwise, confirmed trades and the target
+ * allocation. Idempotent — a deposit is matched on bank + principal + start date. */
+export function ingestStanding(p) {
+  const out = { fixed_deposits: 0, splitwise: 0, trades: 0, target_allocation: false }
+  for (const fd of p.fixed_deposits || []) {
+    const hit = first('SELECT id FROM fixed_deposits WHERE bank = ? AND principal = ? AND start_date = ?', [fd.bank, Number(fd.principal), fd.start_date])
+    saveFixedDeposit({ ...fd, id: hit ? hit.id : undefined }); out.fixed_deposits++
+  }
+  for (const s of p.splitwise || []) { saveSplitwise(s.person, s.amount_inr, s.note || ''); out.splitwise++ }
+  for (const t of p.trades || []) { recordTrade(t); out.trades++ }
+  if (p.target_allocation && typeof p.target_allocation === 'object') { setSetting('target_allocation', p.target_allocation); out.target_allocation = true }
+  return out
+}
+
 export const deleteFixedDeposit = (id) => write((run) => run('DELETE FROM fixed_deposits WHERE id = ?', [id]))
 
 export function saveSplitwise(person, amount, note = '') {

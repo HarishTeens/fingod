@@ -6,14 +6,19 @@ the WebAssembly SQLite and your agent's files. It adds one thing — a listing o
 data/ at /data/manifest.json — so the app can import whatever your coding agent
 drops there. Everything is bound to localhost.
 
-    python3 serve.py            # port 8000
+    python3 serve.py            # port 8000, and opens your browser
     python3 serve.py 9000       # another port
+    python3 serve.py --no-open  # don't open a browser
+
+You don't need this file: `python3 -m http.server 8000 --bind 127.0.0.1` also works, and runs nothing
+from this repo. The app reads data/ from the directory listings in that case.
 """
-import http.server, json, os, socketserver, sys, mimetypes
+import http.server, json, os, socketserver, sys, mimetypes, threading, webbrowser
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(ROOT, "data")
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+ARGS = [a for a in sys.argv[1:] if not a.startswith('--')]
+PORT = int(ARGS[0]) if ARGS else 8000
 mimetypes.add_type("application/wasm", ".wasm")
 mimetypes.add_type("text/javascript", ".js")
 
@@ -66,7 +71,10 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(DATA, "checkpoints"), exist_ok=True)
     os.makedirs(os.path.join(DATA, "transactions"), exist_ok=True)
     with Server(("127.0.0.1", PORT), Handler) as srv:
-        print(f"fingod → http://localhost:{PORT}   (watching {os.path.relpath(DATA)}/, Ctrl-C to stop)")
+        url = f"http://localhost:{PORT}"
+        print(f"fingod → {url}   (watching {os.path.relpath(DATA)}/, Ctrl-C to stop)")
+        if "--no-open" not in sys.argv:
+            threading.Timer(0.6, lambda: webbrowser.open(url)).start()
         try:
             srv.serve_forever()
         except KeyboardInterrupt:

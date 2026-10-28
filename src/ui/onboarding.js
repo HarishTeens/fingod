@@ -61,6 +61,7 @@ function connector(id) {
   const c = CONNECTORS[id]
   return `<div class="eyebrow">${esc(c.by)}</div><h1>${esc(c.name)}</h1><p class="lede">${esc(c.brings)}. ${esc(c.why)}</p>
   <ol class="how">${c.steps.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>
+  <p class="callout">Start your agent <b>inside the fingod folder</b> (<code>cd fingod &amp;&amp; claude</code>) and approve the project's MCP servers when it asks. A session started anywhere else won't load them. Or add the server yourself, for example <code>claude mcp add kite -- npx -y mcp-remote https://mcp.kite.trade/mcp</code>.</p>
   ${promptBox(c.prompt, `p-${id}`)}${statusBox(id)}${serverNote()}
   <div class="actions"><button class="btn big" data-back>Back</button><button class="btn primary big" data-next>Continue</button><button class="btn big" data-next>Skip for now</button></div>`
 }

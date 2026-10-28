@@ -44,3 +44,12 @@ test('files are classified by what they contain', () => {
   assert.equal(classify([{ id: 'x' }]), 'transactions')
   assert.equal(classify({ hello: 'world' }), null)
 })
+
+test('standing-row files are recognised, and a checkpoint may carry its own splitwise history', () => {
+  assert.equal(classify({ fixed_deposits: [] }), 'standing')
+  assert.equal(classify({ trades: [], target_allocation: { in_equity: 100 } }), 'standing')
+  const p = ok(); p.balances.push({ kind: 'splitwise', ref: 'Friend', amount_inr: 100 })
+  assert.doesNotThrow(() => validateCheckpoint(p))
+  const bad = ok(); bad.balances.push({ kind: 'splitwise', ref: 'Friend' })
+  assert.throws(() => validateCheckpoint(bad), /splitwise entry needs ref and amount_inr/)
+})

@@ -90,8 +90,9 @@ async function boot() {
     rerenderTimer = setTimeout(() => { if (route() !== 'welcome') show() }, 80)
   })
   window.addEventListener('hashchange', show)
+  try { await syncInbox() } catch (e) { console.error(e) } // import what is already in data/ BEFORE routing, so existing files land on the dashboard
   show()
-  await poll()
+  poll()
   setInterval(poll, 4000)
 }
 boot()
