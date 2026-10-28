@@ -2,9 +2,20 @@
 // MCP, so the agent does the connecting and writes JSON files into data/, which
 // the app imports. Keep MASTER in step with /PROMPT.md and landing/prompt.md.
 
+export const REPO = 'https://github.com/HarishTeens/fingod.git'
+
+/** The coding agents the setup journey knows how to start. Each loads a project's MCP
+ * servers from its own config file, which this repo ships (keep the three in step). */
+export const AGENTS = {
+  claude: { name: 'Claude Code', cmd: 'claude', config: '.mcp.json', how: "Approve the project's MCP servers when it asks. INDmoney and Kite sign-in links appear the first time a tool is used." },
+  codex: { name: 'Codex CLI', cmd: 'codex', config: '.codex/config.toml', how: 'Trust the project so .codex/config.toml loads. Sign in to INDmoney with: codex mcp login indmoney' },
+  gemini: { name: 'Gemini CLI', cmd: 'gemini', config: '.gemini/settings.json', how: 'It reads .gemini/settings.json from the project. Sign in to INDmoney with: /mcp auth indmoney' },
+}
+export const startCommand = (agent) => `git clone ${REPO} && cd fingod && ${(AGENTS[agent] || AGENTS.claude).cmd}`
+
 const RULES = `Rules: this is READ-ONLY. Never place, modify or cancel an order, and never write anywhere outside this repo's data/ folder. Money is exact: send qty and price, never a computed total. If a file for today's date already exists in data/checkpoints/, read it and MERGE your parts into it instead of overwriting.`
 
-const HOW = `Follow .claude/skills/refresh/SKILL.md for the field mapping and docs/DATA-FORMAT.md for the file formats. If the MCP tools for this source are not available in this session, stop and tell me: this session must be started inside the fingod folder (cd fingod && claude) so it loads .mcp.json, and I must approve the project's MCP servers.`
+const HOW = `Follow .claude/skills/refresh/SKILL.md for the field mapping and docs/DATA-FORMAT.md for the file formats. If the MCP tools for this source are not available in this session, stop and tell me: this session must be started inside the fingod folder (cd fingod, then claude, codex or gemini) so it loads the project's MCP config (.mcp.json, .codex/config.toml or .gemini/settings.json), and I must approve or trust it.`
 
 export const CONNECTORS = {
   wallet: {
@@ -12,8 +23,8 @@ export const CONNECTORS = {
     why: 'Powers the spend charts, the cash balance and credit card debt in your net worth.',
     steps: [
       'In the Wallet app, open Settings → MCP and generate an access token. Copy the whole token.',
-      'Export it, then start your agent in the same terminal: export WALLET_MCP_TOKEN=<token> and then cd fingod && claude.',
-      'Give your agent the prompt below. It uses the Wallet MCP server declared in .mcp.json.',
+      'Export it in the terminal where you start your agent: export WALLET_MCP_TOKEN=<token>. Then start the agent from the fingod folder (see below).',
+      'Give your agent the prompt below. It uses the Wallet MCP server declared in your agent\'s project config.',
       'It writes your transactions and balances into data/. They appear here within seconds.',
     ],
     prompt: `Connect the Wallet (BudgetBakers) MCP server and import my expenses into fingod. Use the "wallet" server declared in .mcp.json; ask me for the access token (Wallet app → Settings → MCP) and keep it out of git. Read my accounts and ask me which are cash, credit cards, or to ignore (a fixed deposit looks like a salary account, so never guess). Page the cleared records with limit 400, process large pages from the spilled file with jq/python so they never enter your context, and write them to data/transactions/wallet-<date>.json. Put the cash and credit_card balances into data/checkpoints/<today>.json. ${HOW} ${RULES}`,
@@ -23,7 +34,7 @@ export const CONNECTORS = {
     name: 'Zerodha Kite', by: 'Zerodha', brings: 'Indian stocks, mutual funds, gold and liquid ETFs',
     why: 'Owns both Indian sleeves. Quantities and prices come straight from your demat.',
     steps: [
-      'Give your agent the prompt below. It adds the Kite MCP server via the mcp-remote bridge.',
+      'Give your agent the prompt below. Kite is reached through the mcp-remote bridge declared in your agent\'s project config.',
       'Your agent shows a Kite login link. Open it once and approve. The link is single-use.',
       'It reads your holdings and funds and writes them to data/. Nothing is traded: the routine is read-only.',
     ],
@@ -34,7 +45,7 @@ export const CONNECTORS = {
     name: 'INDmoney', by: 'INDmoney', brings: 'US stocks and your USD wallet',
     why: 'Owns US equity. fingod derives the exchange rate from INDmoney\'s own figures so the arithmetic stays exact.',
     steps: [
-      'Give your agent the prompt below. It adds the INDmoney MCP server.',
+      'Give your agent the prompt below. It uses the INDmoney MCP server declared in your agent\'s project config.',
       'Sign in once in the browser (mobile number, OTP and MPIN).',
       'It reads your US holdings and writes them to data/. Everything else INDmoney reports is deliberately ignored.',
     ],
@@ -60,7 +71,7 @@ export const MASTER = `Set up fingod for me, a local-first net worth tracker tha
 1. If this repo isn't already your working folder, clone https://github.com/HarishTeens/fingod.
 2. Serve it with Python's built-in server on localhost, from the repo folder, in the background: \`python3 -m http.server 8000 --bind 127.0.0.1\` (the standard library, so nothing from the repo is executed). If port 8000 is busy, use another. Then confirm YOUR server is the one answering: \`curl -s -o /dev/null -w '%{http_code}' localhost:<port>/src/main.js\` must print 200 (a leftover server from an earlier run can hold the port, and a failed start is easy to miss). Then open that address in my browser with \`open\` (macOS), \`xdg-open\` (Linux) or \`start\` (Windows). The app shows a setup journey and imports files from data/ by itself.
 3. Read CLAUDE.md, docs/DATA-FORMAT.md and .claude/skills/refresh/SKILL.md.
-4. Ask me which of these I use: Wallet (expenses), Zerodha Kite (Indian stocks and funds), INDmoney (US stocks, EPF), Bitcoin (typed in). The MCP servers are declared in .mcp.json, but a session only loads them if it was started inside the repo folder and I approved them. If a source's tools aren't available, tell me exactly this: quit, run \`cd <repo folder> && claude\` (for Wallet, first \`export WALLET_MCP_TOKEN=<token from the Wallet app: Settings, MCP>\`), approve the project's MCP servers, then paste the connector prompt from the app's setup page. (The Kite bridge needs Node 20.18.1 or newer: check \`node -v\`.)
+4. Ask me which of these I use: Wallet (expenses), Zerodha Kite (Indian stocks and funds), INDmoney (US stocks, EPF), Bitcoin (typed in). The MCP servers are declared per agent (.mcp.json for Claude Code, .codex/config.toml for Codex, .gemini/settings.json for Gemini CLI), but a session only loads them if it was started inside the repo folder and I approved or trusted them. If a source's tools aren't available, tell me exactly this: quit, run \`cd <repo folder>\` and start your agent there (\`claude\`, \`codex\` or \`gemini\`; for Wallet, first \`export WALLET_MCP_TOKEN=<token from the Wallet app: Settings, MCP>\`), approve or trust the project's MCP config, then paste the connector prompt from the app's setup page. (The Kite bridge needs Node 20.18.1 or newer: check \`node -v\`.)
 5. For each source that is available, connect it one at a time and walk me through the login. Pull my data and write JSON into data/ exactly as docs/DATA-FORMAT.md describes. The app imports it by itself and shows my dashboard; if a file is rejected, the app says which file and field.
 6. Tell me what you found, and what moved since last time split into market, flow and FX.
 

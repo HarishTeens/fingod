@@ -4,7 +4,7 @@
 import { connectorStatus, hasData, fixedDeposits, splitwise, targets, manualBtc } from '../repo.js'
 import { getSetting, setSetting } from '../db.js'
 import { syncInbox, inboxFailures, setManualHolding, saveFixedDeposit, deleteFixedDeposit, saveSplitwise, deleteSplitwise, createManualCheckpoint, ingestAny, IngestError } from '../ingest.js'
-import { CONNECTORS, MASTER } from '../prompts.js'
+import { CONNECTORS, MASTER, AGENTS } from '../prompts.js'
 import { loadDemo } from '../demo.js'
 import { esc, money, sleeveLabel } from './format.js'
 import { DEFAULT_TARGET } from '../compute/allocation.js'
@@ -53,15 +53,22 @@ function welcome(s) {
   <p class="lede">fingod runs entirely in this browser. Your data is stored here, in SQLite, and goes nowhere else. Pick what you use and we'll connect it, one step at a time.</p>
   <div class="choices">${CHOICES.map((c) => `<label class="choice ${s.selected[c.id] ? 'on' : ''}"><input type="checkbox" data-choice="${c.id}" ${s.selected[c.id] ? 'checked' : ''}>
     <span class="ico">${c.icon}</span><span><b>${esc(c.name)}</b> <em>${esc(c.by)}</em><br><span class="muted">${esc(c.brings)}</span></span></label>`).join('')}</div>
-  <p class="note">Wallet, Kite and INDmoney connect through your coding agent (Claude Code or any agent with MCP support), because browsers can't speak MCP. Nothing is ever traded: every connector is read-only.</p>
+  <p class="note">Wallet, Kite and INDmoney connect through your coding agent (Claude Code, Codex CLI, Gemini CLI or any agent with MCP support), because browsers can't speak MCP. Nothing is ever traded: every connector is read-only.</p>
   <div class="actions"><button class="btn primary big" data-next>Continue</button><button class="btn big" data-demo>Explore with demo data</button></div>`
+}
+
+/** Which coding agent the user runs: each loads a project's MCP servers from its own config file. */
+function agentPicker() {
+  const cur = getSetting('agent', 'claude'), a = AGENTS[cur] || AGENTS.claude
+  return `<div class="callout"><div class="agents">${Object.entries(AGENTS).map(([id, x]) => `<button class="btn" data-agent="${id}" aria-pressed="${id === cur}">${esc(x.name)}</button>`).join(' ')}</div>
+  Start your agent <b>inside the fingod folder</b>: <code>cd fingod &amp;&amp; ${esc(a.cmd)}</code>. ${esc(a.how)} A session started anywhere else won't load this project's MCP servers (<code>${esc(a.config)}</code>).</div>`
 }
 
 function connector(id) {
   const c = CONNECTORS[id]
   return `<div class="eyebrow">${esc(c.by)}</div><h1>${esc(c.name)}</h1><p class="lede">${esc(c.brings)}. ${esc(c.why)}</p>
   <ol class="how">${c.steps.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>
-  <p class="callout">Start your agent <b>inside the fingod folder</b> (<code>cd fingod &amp;&amp; claude</code>) and approve the project's MCP servers when it asks. A session started anywhere else won't load them. Or add the server yourself, for example <code>claude mcp add kite -- npx -y mcp-remote https://mcp.kite.trade/mcp</code>.</p>
+  ${agentPicker()}
   ${promptBox(c.prompt, `p-${id}`)}${statusBox(id)}${serverNote()}
   <div class="actions"><button class="btn big" data-back>Back</button><button class="btn primary big" data-next>Continue</button><button class="btn big" data-next>Skip for now</button></div>`
 }
@@ -189,6 +196,7 @@ export function render(el, { onDone }) {
     el.querySelectorAll('[data-back]').forEach((b) => (b.onclick = () => go(idx - 1)))
     el.querySelectorAll('[data-goto]').forEach((b) => (b.onclick = () => go(Number(b.dataset.goto))))
     el.querySelectorAll('[data-copy]').forEach((b) => (b.onclick = () => copy(el.querySelector(`#${b.dataset.copy}`).textContent, b)))
+    el.querySelectorAll('[data-agent]').forEach((b) => (b.onclick = () => { setSetting('agent', b.dataset.agent); draw() }))
     el.querySelectorAll('[data-choice]').forEach((c) => (c.onchange = () => { s.selected[c.dataset.choice] = c.checked; c.closest('.choice').classList.toggle('on', c.checked); save(s) }))
     const demo = el.querySelector('[data-demo]'); if (demo) demo.onclick = () => { loadDemo(); finishUp() }
     const open = el.querySelector('[data-open]'); if (open) open.onclick = finishUp

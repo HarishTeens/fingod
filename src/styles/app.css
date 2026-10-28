@@ -66,3 +66,4 @@ input:focus-visible { outline: 2px solid var(--ring-strong); outline-offset: 1px
 .errs { margin-top: 12px; border: 1px solid var(--critical); border-radius: 12px; padding: 11px 14px; font-size: 13px; color: var(--ink-2); }
 .errs b { display: block; color: var(--critical); margin-bottom: 6px; }
 .errs div { margin: 3px 0; word-break: break-word; }
+.agents { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }

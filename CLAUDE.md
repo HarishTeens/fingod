@@ -84,6 +84,11 @@ landing/             the static landing page (deployed separately)
   `landing/prompt.md`. Change them together.
 - `.claude/skills/refresh/SKILL.md` and `docs/MCP-SHAPES.md` describe the same mappings. Change them
   together.
+- The MCP servers are declared once per agent, and the three must list the same servers and the same
+  disabled Kite order tools: `.mcp.json` (Claude Code, with deny rules in `.claude/settings.json`),
+  `.codex/config.toml` (Codex CLI) and `.gemini/settings.json` (Gemini CLI). `AGENTS.md` is the short
+  guidance Codex and Gemini read; `CLAUDE.md` is the full version. The agent choices in the setup journey
+  and on the landing page live in `AGENTS` in `src/prompts.js` and in the landing page's script.
 
 ## Screenshots
 

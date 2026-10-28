@@ -1,0 +1,19 @@
+# Project-scoped MCP servers for Codex CLI. They load once you trust this project.
+# Keep in step with .mcp.json (Claude Code) and .gemini/settings.json (Gemini CLI).
+#
+#   INDmoney: sign in once with   codex mcp login indmoney
+#   Wallet:   export WALLET_MCP_TOKEN=<the whole token> before starting codex
+#   Kite:     the bridge needs Node 20.18.1 or newer; the login link appears on first use
+
+[mcp_servers.kite]
+command = "npx"
+args = ["-y", "mcp-remote", "https://mcp.kite.trade/mcp"]
+# fingod is read-only: never expose Kite's order and GTT tools to the model.
+disabled_tools = ["place_order", "modify_order", "cancel_order", "place_gtt_order", "modify_gtt_order", "delete_gtt_order"]
+
+[mcp_servers.wallet]
+url = "https://mcp.wallet.budgetbakers.com"
+bearer_token_env_var = "WALLET_MCP_TOKEN"
+
+[mcp_servers.indmoney]
+url = "https://mcp.indmoney.com/mcp"

@@ -83,6 +83,15 @@
   .card h3 { font-size:24px; margin-bottom:6px; } .card .meta { color:var(--muted); font-size:15px; margin-bottom:22px; }
   .card .meta code, .faq code { font-family:var(--mono); font-size:.9em; background:#1b1b1d; padding:1px 6px; border-radius:5px; color:var(--ink-2); }
   .copybtn { font-size:16px; padding:15px 28px; }
+  .agents { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .agent { font:600 13.5px var(--sans); padding:8px 16px; border-radius:999px; border:1px solid var(--ring); background:transparent; color:var(--muted); cursor:pointer; }
+  .agent:hover { color:var(--ink); border-color:#555; } .agent[aria-pressed="true"] { color:var(--ink); border-color:#888; background:#1b1b1d; }
+  .label { font:600 12px var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .cmd { position:relative; background:#08080a; border:1px solid var(--line); border-radius:12px; padding:14px 140px 14px 16px; }
+  .cmd pre { font:13px/1.6 var(--mono); color:var(--ink); white-space:pre-wrap; word-break:break-all; }
+  .copysm { position:absolute; top:9px; right:9px; padding:8px 14px; font-size:13px; }
+  .hint { font-size:13.5px; color:var(--muted); margin-top:10px; max-width:640px; }
+  @media (max-width:560px){ .cmd { padding-right:16px; padding-bottom:56px; } .copysm { top:auto; bottom:9px; } }
   details.prompt { margin-top:22px; } details.prompt summary { cursor:pointer; color:var(--muted); font-size:14px; } details.prompt summary:hover { color:var(--ink); }
   details.prompt pre { margin-top:14px; background:#08080a; border:1px solid var(--line); border-radius:12px; padding:16px 18px; font:12.5px/1.65 var(--mono); color:var(--ink-2); white-space:pre-wrap; word-break:break-word; max-height:380px; overflow:auto; }
   .alt { margin-top:26px; padding-top:22px; border-top:1px solid var(--line); font-size:14.5px; color:var(--muted); }
@@ -134,19 +143,33 @@
   <h2>Three steps. Your coding assistant does the typing.</h2>
   <p class="sub">fingod can't log in to your accounts from a web page, and it shouldn't. Your assistant does that on your machine and hands the app plain files.</p>
   <div class="steps">
-    <div class="step"><span class="n">01</span><div class="where">On your computer</div><p>Open Claude Code, or any coding assistant that has a shell and MCP support.</p></div>
-    <div class="step"><span class="n">02</span><div class="where">Paste the prompt</div><p>It clones the repo, starts the app, and asks which accounts you use.</p></div>
+    <div class="step"><span class="n">01</span><div class="where">In a terminal</div><p>Clone the repo and start your assistant inside it. One command.</p></div>
+    <div class="step"><span class="n">02</span><div class="where">Paste the prompt</div><p>It serves the app, opens it in your browser, and asks which accounts you use.</p></div>
     <div class="step"><span class="n">03</span><div class="where">Follow along</div><p>Log in to each account when asked. Your dashboard fills in as the data arrives.</p></div>
   </div>
   <div class="card">
     <h3>Set up fingod</h3>
-    <p class="meta">The prompt is <code>PROMPT.md</code> in the repo. Needs Python 3 and a modern browser. Every connector is read-only.</p>
-    <button class="btn primary copybtn" id="copy" type="button">Copy the prompt</button>
+    <p class="meta">Needs Python 3 and a modern browser. Every connector is read-only. The prompt is <code>PROMPT.md</code> in the repo.</p>
+
+    <div class="label">1 · Start your assistant inside the repo</div>
+    <div class="agents" role="group" aria-label="Choose your coding agent">
+      <button class="agent" type="button" data-agent="claude" aria-pressed="true">Claude Code</button>
+      <button class="agent" type="button" data-agent="codex" aria-pressed="false">Codex CLI</button>
+      <button class="agent" type="button" data-agent="gemini" aria-pressed="false">Gemini CLI</button>
+    </div>
+    <div class="cmd"><pre id="cmd">git clone https://github.com/HarishTeens/fingod.git && cd fingod && claude</pre><button class="btn copysm" type="button" data-copy="cmd">Copy command</button></div>
+    <p class="hint" id="agenthint">Starting inside the folder is what lets Claude Code load the project&rsquo;s MCP servers. It asks you to approve them once.</p>
+    <p class="hint">Using Wallet? <code>export WALLET_MCP_TOKEN=&lt;token&gt;</code> first (Wallet app, Settings, MCP). Any other agent with shell access and MCP support works the same way.</p>
+
+    <div class="label" style="margin-top:26px">2 · Paste the prompt</div>
+    <button class="btn primary copybtn" type="button" data-copy="prompt">Copy the prompt</button>
     <details class="prompt"><summary>Read the prompt first</summary><pre id="prompt"></pre></details>
-    <div class="alt">Prefer to do it yourself? No assistant needed to look around:
+    <p class="hint">Kite's connector needs Node 20.18.1 or newer. If <code>node -v</code> is older, <code>nvm install</code> inside the folder picks up the right one.</p>
+
+    <div class="alt">Just want to look around? No assistant needed:
 <pre>git clone https://github.com/HarishTeens/fingod.git
 cd fingod
-python3 serve.py        # then open http://localhost:8000 and choose “Explore with demo data”</pre></div>
+python3 -m http.server 8000 --bind 127.0.0.1     # then open http://localhost:8000 and choose “Explore with demo data”</pre></div>
   </div>
 </div></section>
 
@@ -156,7 +179,8 @@ python3 serve.py        # then open http://localhost:8000 and choose “Explore 
   <div class="faq">
     <details><summary>Is my data safe?</summary><p>Your finances never leave your machine. The app runs in your browser and stores everything in a SQLite database in that browser. The files your assistant writes go into a <code>data/</code> folder that git ignores. There is no account, server or analytics.</p></details>
     <details><summary>Can it place trades?</summary><p>No. Every connector is read-only, and the instructions forbid order tools outright. Kite's server exposes them; fingod never calls them.</p></details>
-    <details><summary>Which assistants work?</summary><p>Claude Code is the one it's built around, and any assistant with shell access and MCP support can follow the same prompt. The instructions live in plain files in the repo, so a different assistant can read them too.</p></details>
+    <details><summary>Which assistants work?</summary><p>Claude Code, Codex CLI and Gemini CLI are set up out of the box: the repo ships each one&rsquo;s project MCP config (<code>.mcp.json</code>, <code>.codex/config.toml</code>, <code>.gemini/settings.json</code>) and instructions (<code>CLAUDE.md</code>, <code>AGENTS.md</code>). Any other assistant with shell access and MCP support can follow the same prompt.</p></details>
+    <details><summary>Why start the assistant inside the folder?</summary><p>An assistant only loads a project&rsquo;s MCP servers when its session starts in that folder, and you approve them at that moment. Cloning first and starting the assistant from inside it means the whole setup runs in one session, with nothing to restart.</p></details>
     <details><summary>Do I need every connector?</summary><p>No. Pick the ones you use. Bitcoin, fixed deposits and Splitwise are just typed in. You can also look around first with the built-in demo data.</p></details>
     <details><summary>Why does it need Python?</summary><p>Only for <code>serve.py</code>, a tiny static file server. Browsers won't load WebAssembly from a plain file, and the server also lets the app see the folder your assistant writes to. There is no backend and nothing to install.</p></details>
     <details><summary>What does it cost?</summary><p>Nothing. It's open source under the Apache 2.0 license.</p></details>
@@ -167,13 +191,33 @@ python3 serve.py        # then open http://localhost:8000 and choose “Explore 
 <footer><div class="wrap"><span><b style="color:var(--ink)">fingod</b> · open source under Apache 2.0 · screenshots use invented numbers</span><span><a href="https://github.com/HarishTeens/fingod" rel="noopener">github.com/HarishTeens/fingod</a></span></div></footer>
 
 <script>
-  var promptEl = document.getElementById('prompt'), btn = document.getElementById('copy'), text = '';
-  fetch('prompt.md').then(function (r) { return r.text(); }).then(function (t) { text = t.trim(); promptEl.textContent = text; });
-  btn.addEventListener('click', function () {
-    function done() { btn.textContent = 'Copied ✓'; setTimeout(function () { btn.textContent = 'Copy the prompt'; }, 2200); }
-    if (!text) { text = promptEl.textContent; }
+  var promptEl = document.getElementById('prompt'), promptText = '';
+  fetch('prompt.md').then(function (r) { return r.text(); }).then(function (t) { promptText = t.trim(); promptEl.textContent = promptText; });
+  function copy(text, btn) {
+    var label = btn.textContent;
+    function done() { btn.textContent = 'Copied ✓'; setTimeout(function () { btn.textContent = label; }, 2200); }
     if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(done); }
     else { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); done(); }
+  }
+  var AGENTS = {
+    claude: { cmd: 'claude', hint: 'Starting inside the folder is what lets Claude Code load the project\u2019s MCP servers. It asks you to approve them once.' },
+    codex: { cmd: 'codex', hint: 'Codex loads <code>.codex/config.toml</code> once you trust the project. Sign in to INDmoney with <code>codex mcp login indmoney</code>.' },
+    gemini: { cmd: 'gemini', hint: 'Gemini CLI reads <code>.gemini/settings.json</code> from the project. Sign in to INDmoney with <code>/mcp auth indmoney</code>.' }
+  };
+  var CLONE = 'git clone https://github.com/HarishTeens/fingod.git && cd fingod && ';
+  document.querySelectorAll('[data-agent]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var a = AGENTS[b.getAttribute('data-agent')];
+      document.getElementById('cmd').textContent = CLONE + a.cmd;
+      document.getElementById('agenthint').innerHTML = a.hint;
+      document.querySelectorAll('[data-agent]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    });
+  });
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-copy');
+      copy(id === 'prompt' ? (promptText || promptEl.textContent) : document.getElementById(id).textContent.trim(), btn);
+    });
   });
 </script>
 </body>
