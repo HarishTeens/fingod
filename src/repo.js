@@ -19,7 +19,9 @@ export const fixedDeposits = () => all('SELECT * FROM fixed_deposits ORDER BY st
 export const splitwise = () => all('SELECT * FROM splitwise_balances ORDER BY ABS(amount_inr) DESC')
 export const targets = () => getSetting('target_allocation', DEFAULT_TARGET)
 export const trades = () => all('SELECT * FROM trades ORDER BY exit_date DESC')
+/** The Bitcoin position: the hand-entered one, else the latest checkpoint's (an agent may have written it). */
 export const manualBtc = () => first("SELECT * FROM manual_holdings WHERE symbol = 'BTC' ORDER BY as_of_date DESC LIMIT 1")
+  || first("SELECT h.qty, h.price, h.avg_cost, h.invested_inr FROM holdings h JOIN checkpoints c ON c.id = h.checkpoint_id WHERE h.symbol = 'BTC' ORDER BY c.as_of_date DESC LIMIT 1")
 
 /** One networth point per checkpoint, oldest first. */
 export function networthSeries() {
@@ -126,7 +128,7 @@ export function labelsMap() {
 }
 export const transactionCount = () => first('SELECT COUNT(*) AS n FROM transactions').n
 
-/** What the connectors have delivered, for the onboarding checklist. */
+/** What has been delivered so far, per source (used by the Data page). */
 export function connectorStatus() {
   const latest = latestCheckpoint()
   const src = latest ? latest.sources : {}

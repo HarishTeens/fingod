@@ -132,7 +132,7 @@ The schema is in `src/schema.js` (versioned migrations, applied on open):
 | `fixed_deposits`, `splitwise_balances`, `manual_holdings` | Standing and hand-entered rows |
 | `transactions`, `transaction_labels`, `wallet_accounts` | Wallet records, idempotent on Wallet's own id |
 | `trades` | Realised profit you confirmed |
-| `settings` | Target allocation, onboarding state |
+| `settings` | Target allocation, your agent choice |
 | `imported_files` | Which files from `data/` were imported, so syncing twice is a no-op |
 
 The database file is exported to IndexedDB after every write. **Data → Download backup** saves it as a

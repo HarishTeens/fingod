@@ -81,7 +81,6 @@ export function loadDemo() {
     recordTrade({ sleeve: t[0], symbol: t[1], exit_date: t[2], invested_inr: t[3], realised_inr: t[4], holding_days: t[5], source: 'demo' })
   setSetting('target_allocation', DEFAULT_TARGET)
   setSetting('demo', true)
-  setSetting('onboarding', { done: true })
 }
 
 export const isDemo = () => { const r = first("SELECT value FROM settings WHERE key = 'demo'"); return !!r && JSON.parse(r.value) === true }

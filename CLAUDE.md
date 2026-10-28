@@ -13,7 +13,8 @@ The browser cannot speak MCP, so **you** are the connector. The `/refresh` skill
 into `data/`; the app imports them automatically. Read [docs/DATA-FORMAT.md](docs/DATA-FORMAT.md) before
 writing any, and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before changing `src/compute/`.
 
-If a user asks you to "set up fingod", follow [PROMPT.md](PROMPT.md).
+If a user asks you to "set up fingod", follow [docs/ONBOARDING.md](docs/ONBOARDING.md): onboarding is a conversation in the
+terminal, and the browser only shows the result. [PROMPT.md](PROMPT.md) is the prompt that points here.
 
 ## Hard rules
 
@@ -56,7 +57,8 @@ src/repo.js          read models the UI draws from
 src/compute/         pure functions: qty-diff, net worth, FD interest, returns, realised, expenses
 src/ui/              one module per page, plus charts.js (SVG strings) and format.js
 src/demo.js          invented demo dataset
-src/prompts.js       the prompts the setup journey hands to the user's agent
+src/prompts.js       the setup prompt and the coding agents we ship config for
+src/ui/welcome.js    the empty state: how to start your agent, the demo, a file drop
 tests/               node:test; no dependencies
 docs/                DATA-FORMAT, ARCHITECTURE, MCP-SHAPES
 landing/             the static landing page (deployed separately)
@@ -87,8 +89,8 @@ landing/             the static landing page (deployed separately)
 - The MCP servers are declared once per agent, and the three must list the same servers and the same
   disabled Kite order tools: `.mcp.json` (Claude Code, with deny rules in `.claude/settings.json`),
   `.codex/config.toml` (Codex CLI) and `.gemini/settings.json` (Gemini CLI). `AGENTS.md` is the short
-  guidance Codex and Gemini read; `CLAUDE.md` is the full version. The agent choices in the setup journey
-  and on the landing page live in `AGENTS` in `src/prompts.js` and in the landing page's script.
+  guidance Codex and Gemini read; `CLAUDE.md` is the full version. The agent choices on the
+  empty-state screen and on the landing page live in `AGENTS` in `src/prompts.js` and in the landing page's script.
 
 ## Screenshots
 

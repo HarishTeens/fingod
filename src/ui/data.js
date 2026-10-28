@@ -4,6 +4,7 @@ import { syncInbox, ingestAny, inboxFailures, IngestError } from '../ingest.js'
 import { checkpointPrompt } from '../prompts.js'
 import { isDemo } from '../demo.js'
 import { esc, shortDate, money, sleeveLabel } from './format.js'
+import * as manual from './manual.js'
 
 async function copy(text, btn) {
   try { await navigator.clipboard.writeText(text) } catch { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove() }
@@ -19,14 +20,14 @@ export function render(el) {
       <p class="hero-secondary" style="margin-top:0">Paste this into your coding agent whenever you want fresh numbers. It reads each source you connected and drops files into <code>data/</code>; they import here automatically.</p>
       <div class="prompt"><pre id="p-cp">${esc(checkpointPrompt)}</pre><button class="btn primary" data-copy="p-cp">Copy prompt</button></div></section>
 
-    <section class="card"><header><h2>What's here</h2><span class="spacer"></span><a class="btn" href="#/welcome">Re-run setup</a></header>
+    <section class="card"><header><h2>What's here</h2><span class="spacer"></span><a class="btn" href="#/welcome">Connect more</a></header>
       <table class="data"><tbody>
         <tr><td class="name">Checkpoints</td><td class="num">${cps.length}${cps.length ? ` · latest ${shortDate(cps.at(-1).as_of_date)}` : ''}</td></tr>
         <tr><td class="name">Wallet transactions</td><td class="num">${transactionCount().toLocaleString('en-IN')}</td></tr>
-        <tr><td class="name">Fixed deposits</td><td class="num">${fixedDeposits().length} <a class="btn" href="#/welcome?step=extras">edit</a></td></tr>
-        <tr><td class="name">Splitwise people</td><td class="num">${splitwise().length} <a class="btn" href="#/welcome?step=extras">edit</a></td></tr>
-        <tr><td class="name">Bitcoin (manual)</td><td class="num">${st.btc.ok ? 'set' : '—'} <a class="btn" href="#/welcome?step=btc">edit</a></td></tr>
-        <tr><td class="name">Allocation targets${getSetting('target_allocation', null) === null ? ' <span class="muted">(defaults, not set yet)</span>' : ''}</td><td class="num">${Object.entries(targets()).map(([k, v]) => `${esc(sleeveLabel(k))} ${v}%`).join(' · ')} <a class="btn" href="#/welcome?step=targets">edit</a></td></tr>
+        <tr><td class="name">Fixed deposits</td><td class="num">${fixedDeposits().length}</td></tr>
+        <tr><td class="name">Splitwise people</td><td class="num">${splitwise().length}</td></tr>
+        <tr><td class="name">Bitcoin (manual)</td><td class="num">${st.btc.ok ? 'set' : '—'}</td></tr>
+        <tr><td class="name">Allocation targets${getSetting('target_allocation', null) === null ? ' <span class="muted">(defaults, not set yet)</span>' : ''}</td><td class="num">${Object.entries(targets()).map(([k, v]) => `${esc(sleeveLabel(k))} ${v}%`).join(' · ')}</td></tr>
       </tbody></table></section>
 
     <section class="card"><header><h2>Import files</h2></header>
@@ -34,12 +35,15 @@ export function render(el) {
       <div class="actions"><button class="btn" data-sync>Sync now</button><button class="btn" data-pick>Choose files…</button><input type="file" multiple accept=".json,.sqlite,.db" hidden data-file></div>
       <pre class="log" data-log>${esc(log)}</pre>${inboxFailures().length ? '<p class="note" style="color:var(--critical)">These files are in data/ but were not imported. Fix the named field and it imports on the next sync.</p>' : ''}</section>
 
+    ${manual.section()}
+
     <section class="card"><header><h2>Backup & reset</h2></header>
       <p class="hero-secondary" style="margin-top:0">Your database lives in this browser's storage. Clearing site data would erase it, so keep a backup.</p>
       <div class="actions"><button class="btn" data-export>Download backup (.sqlite)</button><button class="btn" data-restore>Restore backup…</button><input type="file" accept=".sqlite,.db" hidden data-restore-file>
       <button class="btn" data-reset style="margin-left:auto;color:var(--critical)">${isDemo() ? 'Clear demo data' : 'Erase everything'}</button></div></section></div>`
   }
   draw()
+  manual.bind(el, () => draw())
   const logTo = (t) => { const n = el.querySelector('[data-log]'); if (n) n.textContent = t }
   el.addEventListener('click', async (e) => {
     const c = e.target.closest('[data-copy]'); if (c) copy(el.querySelector(`#${c.dataset.copy}`).textContent, c)

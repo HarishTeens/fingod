@@ -11,7 +11,7 @@ data/transactions/<anything>.json      Wallet expense records
 
 Any local static server works. `python3 -m http.server 8000 --bind 127.0.0.1` lists each folder as HTML and the app
 reads those listings; `python3 serve.py` adds a `/data/manifest.json`. The app polls every few seconds and
-imports any file that is new or changed. A file it can't import is reported by name and field. You can also drop files onto the setup page, or use **Data → Choose files**.
+imports any file that is new or changed. A file it can't import is reported by name and field. You can also drop files onto the empty-state page, or use **Data → Choose files**.
 
 ## Checkpoint
 

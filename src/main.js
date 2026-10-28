@@ -20,7 +20,7 @@ const PAGES = [
 const root = document.getElementById('root')
 let cleanup = null, rerenderTimer = null, showSeq = 0
 
-const needsOnboarding = () => !hasData() && !(db.getSetting('onboarding', {}) || {}).done
+const needsWelcome = () => !hasData()
 
 const theme = () => localStorage.getItem('fingod-theme') || 'dark'
 const applyTheme = () => document.documentElement.setAttribute('data-theme', theme())
@@ -33,8 +33,8 @@ async function show() {
   const seq = ++showSeq
   cleanup?.(); cleanup = null
   const r = route()
-  if (r === 'welcome') return showOnboarding(seq)
-  if (!r && needsOnboarding()) { location.hash = '#/welcome'; return }
+  if (r === 'welcome') return showWelcome(seq)
+  if (!r && needsWelcome()) { location.hash = '#/welcome'; return }
   const entry = PAGES.find((p) => p.id === r) || PAGES[0]
   if (!hasData() && entry.id !== 'data') { location.hash = '#/welcome'; return }
   const page = await entry.load()
@@ -52,14 +52,12 @@ async function show() {
   window.scrollTo(0, y)
 }
 
-async function showOnboarding(seq) {
-  const onboarding = await import('./ui/onboarding.js')
+async function showWelcome(seq) {
+  const welcome = await import('./ui/welcome.js')
   if (seq !== showSeq) return
-  const step = new URLSearchParams(location.hash.split('?')[1] || '').get('step')
-  if (step) { const o = db.getSetting('onboarding', {}) || {}; db.setSetting('onboarding', { ...o, step: -1, goto: step }) }
-  root.innerHTML = '<div class="app wide"><header class="topbar"><h1>fingod</h1><span class="spacer"></span><button class="btn" id="theme">' + (theme() === 'dark' ? 'Light' : 'Dark') + '</button></header><div id="onboard"></div></div>'
+  root.innerHTML = '<div class="app wide"><header class="topbar"><h1>fingod</h1><span class="spacer"></span><button class="btn" id="theme">' + (theme() === 'dark' ? 'Light' : 'Dark') + '</button></header><div id="welcome"></div></div>'
   document.getElementById('theme').onclick = () => { localStorage.setItem('fingod-theme', theme() === 'dark' ? 'light' : 'dark'); applyTheme(); show() }
-  cleanup = onboarding.render(document.getElementById('onboard'), { onDone: () => { location.hash = '#/dashboard' } })
+  cleanup = welcome.render(document.getElementById('welcome'), { onData: () => { location.hash = '#/dashboard' } })
 }
 
 function fatal(e) {
