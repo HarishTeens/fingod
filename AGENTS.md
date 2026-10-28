@@ -12,6 +12,8 @@ sources (Wallet, Zerodha Kite, INDmoney) over MCP and write JSON files into `dat
 - If asked to set fingod up, follow [docs/ONBOARDING.md](docs/ONBOARDING.md): a conversation in the terminal, one question
   at a time. [PROMPT.md](PROMPT.md) is the prompt that points there.
 - File formats: [docs/DATA-FORMAT.md](docs/DATA-FORMAT.md).
+- **Every checkpoint starts with an update.** Fast-forward pull the latest `main` (never merge, reset or force), tell the user
+  what changed, and re-read the routine. Details: SKILL.md §0.
 - Field mappings and the whole refresh routine: [.claude/skills/refresh/SKILL.md](.claude/skills/refresh/SKILL.md).
   It is a plain Markdown file; follow it whatever agent you are.
 

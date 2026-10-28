@@ -124,7 +124,8 @@ Tell the user, briefly:
 
 - what you connected and what you found (net worth in rupees, the biggest holdings);
 - anything stale or skipped;
-- how to take a checkpoint later: say "take a checkpoint" (Claude Code also has `/refresh`) in this folder;
+- how to take a checkpoint later: say "take a checkpoint" (Claude Code also has `/refresh`) in this folder. Each
+  checkpoint starts by updating fingod to the latest `main` (a safe fast-forward pull) and telling them what changed;
 - that everything stays on their machine: the browser's own database and the gitignored `data/` folder.
 
 Don't ask for confirmation of things the user already said. If they ask for something that is not covered here,

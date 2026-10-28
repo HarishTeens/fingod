@@ -25,6 +25,23 @@ Weekly, or whenever asked. **It never polls.**
 
 ## 0. Preflight
 
+0. **Update fingod first.** The routine and the app improve over time, so every checkpoint starts from the
+   latest `main`. Only ever pull from this checkout's own `origin`.
+   - `git fetch origin main`, then `git rev-list --count HEAD..origin/main`. If it prints `0` you are up to
+     date: say nothing and move on.
+   - Otherwise check `git status --porcelain --untracked-files=no`. If it shows local edits to tracked files,
+     **do not pull**; tell the user there are local changes and carry on with what you have. (`data/` is
+     gitignored, so your data never blocks a pull.)
+   - Show what is coming: `git log --oneline HEAD..origin/main` and `git diff --stat HEAD..origin/main`.
+   - Pull **fast-forward only**: `git pull --ff-only origin main`. Never merge, rebase, reset, stash or force
+     anything. If it cannot fast-forward, stop and tell the user.
+   - **Tell the user, before you carry on**, that fingod was updated and what changed, in a sentence or two
+     (the commit subjects). If the update touched instructions (`.claude/skills/`, `docs/ONBOARDING.md`,
+     `AGENTS.md`, `CLAUDE.md`), say so.
+   - **Re-read this file** after pulling: the steps below may have just changed. If the update touched an MCP or
+     permission config (`.mcp.json`, `.codex/config.toml`, `.gemini/settings.json`, `.claude/settings.json`),
+     tell the user to restart the agent from the repo folder, because those load when a session starts.
+   - No network, or `origin` unreachable? Say so in one line and carry on.
 1. **Is the app running?** Use the port the user's server is on (8000 unless told otherwise) and check
    that it serves *this* repo: `curl -s -o /dev/null -w '%{http_code}' localhost:8000/src/main.js` must
    print `200`. A refused connection or another status means it isn't up, or a leftover server holds the
@@ -41,8 +58,9 @@ Weekly, or whenever asked. **It never polls.**
 4. **Read `data/config.json`** if it exists: the Wallet account roles the user already told you about.
 5. **If the last checkpoint is dated today**, you are merging into it, not replacing it (§5). Say so.
 
-Fixed deposits, Splitwise and target allocation are **standing rows entered in the app**. Do not
-collect them. If the user volunteers a change, tell them to edit it under **Data → Re-run setup**.
+Fixed deposits, Splitwise and target allocation are **standing rows**, entered during setup. Do not collect
+them on every checkpoint. If the user volunteers a change, make it: update `data/standing/manual.json` (see
+`docs/DATA-FORMAT.md`), or point them at the forms on the app's **Data** page.
 
 ---
 

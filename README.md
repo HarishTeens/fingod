@@ -69,6 +69,7 @@ modern browser.
   recorded, with win rate, holding period and gross wins versus gross losses.
 - **Expenses you can drill into.** Weekly or monthly spend by label, down through category to the single
   transaction, net of money that came back.
+- **Stays current.** Each checkpoint starts by fast-forwarding to the latest `main`, and your agent tells you what changed.
 - **A 52-week price watch** on every refresh, for mega-cap US stocks and your gold ETF.
 - **Local and read-only.** Your data lives in your browser and in a gitignored folder. Nothing is ever
   traded.
