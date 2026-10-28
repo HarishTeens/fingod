@@ -1,0 +1,251 @@
+@import './tokens.css';
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* tabular-nums on table columns and axis ticks only — not on prose, and not on
+ * the hero figure, where proportional digits read better at display size. */
+.tnum { font-variant-numeric: tabular-nums; }
+
+.app { max-width: 1180px; margin: 0 auto; padding: 28px 24px 80px; }
+
+.topbar {
+  display: flex; align-items: baseline; gap: 16px;
+  margin-bottom: 24px;
+}
+.topbar h1 { font-size: 19px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.topbar .sub { color: var(--muted); font-size: 13px; }
+.topbar .spacer { flex: 1; }
+
+.grid { display: grid; gap: 16px; }
+.grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.grid.cols-3 { grid-template-columns: 2fr 1fr; }
+@media (max-width: 900px) {
+  .grid.cols-2, .grid.cols-3 { grid-template-columns: 1fr; }
+}
+
+/* Cards: 16px radius, 20–24px padding, one hairline ring, no drop shadows. */
+.card {
+  background: var(--card);
+  border: 1px solid var(--ring);
+  border-radius: 16px;
+  padding: 22px;
+}
+.card > header {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 0 14px;
+}
+.card h2 {
+  font-size: 13px; font-weight: 600; letter-spacing: 0.02em;
+  text-transform: uppercase; color: var(--muted); margin: 0;
+}
+.card header .spacer { flex: 1; }
+
+.hero-figure {
+  font-size: 44px; font-weight: 600; letter-spacing: -0.02em;
+  line-height: 1.1; margin: 2px 0 6px;
+}
+.hero-label { color: var(--muted); font-size: 13px; }
+.hero-secondary { color: var(--ink-2); font-size: 15px; margin-top: 10px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--ring); border-radius: 999px;
+  padding: 4px 11px; font-size: 12.5px; color: var(--ink-2);
+}
+.chip .val { font-variant-numeric: tabular-nums; font-weight: 600; }
+.chip.good .val { color: var(--good); }
+.chip.bad  .val { color: var(--critical); }
+
+.btn {
+  background: transparent; color: var(--ink-2);
+  border: 1px solid var(--ring); border-radius: 8px;
+  padding: 4px 10px; font-size: 12px; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { border-color: var(--ring-strong); color: var(--ink); }
+.btn[aria-pressed='true'] { color: var(--ink); border-color: var(--ring-strong); }
+
+table.data { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+/* Holdings tables run to eleven columns once a sleeve carries both currencies
+   and twelve with attribution, which is past what 1180px holds. Scrolling the
+   table beats wrapping headers or shrinking type below legibility. */
+.table-wrap { overflow-x: auto; }
+.table-wrap > table.data { min-width: 100%; width: auto; }
+table.data th {
+  text-align: left; font-weight: 500; color: var(--muted);
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em;
+  padding: 6px 10px 8px; border-bottom: 1px solid var(--gridline);
+  /* A wrapped header pushes its own row to two lines and drags every other
+     column's baseline with it. Wide tables scroll instead — see .table-wrap. */
+  white-space: nowrap;
+}
+table.data td {
+  padding: 8px 10px; border-bottom: 1px solid var(--gridline);
+  color: var(--ink-2);
+}
+table.data tr:last-child td { border-bottom: none; }
+table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.data td.name { color: var(--ink); }
+
+.swatch {
+  display: inline-block; width: 9px; height: 9px; border-radius: 2px;
+  margin-right: 8px; vertical-align: baseline;
+}
+
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.legend span { display: inline-flex; align-items: center; font-size: 12.5px; color: var(--ink-2); }
+
+.legend-toggle {
+  display: inline-flex; align-items: center; gap: 0;
+  background: none; border: none; padding: 2px 0; margin: 0;
+  font: inherit; font-size: 12.5px; color: var(--ink-2);
+  cursor: pointer;
+}
+.legend-toggle:hover { color: var(--ink); }
+.legend-toggle:focus-visible { outline: 2px solid var(--ring-strong); outline-offset: 3px; border-radius: 4px; }
+
+.empty {
+  color: var(--muted); font-size: 13.5px; padding: 26px 4px; text-align: center;
+  border: 1px dashed var(--gridline); border-radius: 12px;
+}
+
+.tooltip {
+  background: var(--card); border: 1px solid var(--ring-strong);
+  border-radius: 10px; padding: 9px 11px; font-size: 12.5px;
+  color: var(--ink); box-shadow: none;
+}
+.tooltip .row { display: flex; gap: 14px; justify-content: space-between; }
+.tooltip .row .v { font-variant-numeric: tabular-nums; }
+.tooltip .head { color: var(--muted); margin-bottom: 5px; font-size: 11.5px; }
+
+.note { color: var(--muted); font-size: 12px; margin-top: 12px; line-height: 1.45; }
+
+/* --- drill-down ---------------------------------------------------------- */
+
+.crumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; padding: 0 4px; }
+.crumbs .sep { color: var(--muted); margin: 0 8px; }
+.crumb {
+  background: none; border: none; padding: 2px 0; font: inherit; font-size: 14px;
+  color: var(--ink-2); cursor: pointer;
+}
+.crumb:hover { color: var(--ink); }
+.crumb.current { color: var(--ink); font-weight: 600; cursor: default; }
+.crumbs button.crumb:focus-visible { outline: 2px solid var(--ring-strong); outline-offset: 3px; border-radius: 4px; }
+
+.row-btn {
+  background: none; border: none; padding: 0; font: inherit; color: inherit;
+  display: inline-flex; align-items: center; cursor: pointer; text-align: left;
+}
+.row-btn:hover .name { color: var(--ink); text-decoration: underline; }
+.row-btn:focus-visible { outline: 2px solid var(--ring-strong); outline-offset: 3px; border-radius: 4px; }
+
+tr.picked td { background: rgba(127, 127, 127, 0.09); }
+tr.picked .name { color: var(--ink); font-weight: 600; }
+
+.dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 9px; flex: none;
+}
+
+/* Proportion, not precision — the number is in the next column. */
+.minibar {
+  display: block; height: 6px; border-radius: 3px;
+  background: var(--gridline); overflow: hidden;
+}
+.minibar > span { display: block; height: 100%; background: var(--ink-2); border-radius: 3px; }
+
+.tag {
+  display: inline-block; border: 1px solid var(--ring); border-radius: 999px;
+  padding: 1px 8px; margin-right: 5px; font-size: 11.5px; color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.tabs { display: flex; gap: 4px; }
+.tab {
+  background: none; border: none; border-bottom: 2px solid transparent;
+  padding: 4px 2px; margin-right: 14px; font: inherit; font-size: 14px;
+  color: var(--muted); cursor: pointer; text-decoration: none;
+  display: inline-block;
+}
+.tab:hover { color: var(--ink-2); }
+.tab[aria-current='page'] { color: var(--ink); border-bottom-color: var(--ink); }
+
+/* Sortable headers. The whole label is the target, not just the caret. */
+.sort-btn {
+  background: none; border: none; padding: 0; margin: 0; cursor: pointer;
+  font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit;
+  display: inline-flex; align-items: baseline; gap: 5px;
+}
+th.num .sort-btn { flex-direction: row-reverse; }
+.sort-btn:hover { color: var(--ink-2); }
+.sort-btn:focus-visible { outline: 2px solid var(--ring-strong); outline-offset: 3px; border-radius: 4px; }
+th[aria-sort]:not([aria-sort='none']) .sort-btn { color: var(--ink); }
+/* A dot rather than nothing on inactive columns, so it is visible that they
+   sort at all without eight arrows competing for attention. */
+.caret { font-size: 9px; opacity: 0.65; }
+th[aria-sort='none'] .caret { opacity: 0.3; }
+
+/* --- proportion bar ------------------------------------------------------ */
+
+.proportion { margin-top: 18px; }
+
+.proportion-bar {
+  display: flex; width: 100%; height: 26px; border-radius: 6px; overflow: hidden;
+  /* 2px of surface between adjacent fills, so segments read as separate marks
+     rather than one gradient. */
+  gap: 2px; background: var(--card);
+}
+.proportion-bar .seg {
+  display: block; min-width: 3px; cursor: default;
+  transition: opacity 90ms linear;
+}
+.proportion-bar .seg:first-child { border-radius: 4px 0 0 4px; }
+.proportion-bar .seg:last-child { border-radius: 0 4px 4px 0; }
+
+.proportion-legend {
+  display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px;
+}
+.proportion-legend span {
+  display: inline-flex; align-items: baseline; gap: 7px;
+  font-size: 12.5px; color: var(--ink-2);
+}
+.proportion-legend b {
+  font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums;
+}
+
+/* --- pager --------------------------------------------------------------- */
+
+.pager {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 12px; font-size: 12.5px; color: var(--muted);
+}
+.pager .spacer { flex: 1; }
+.pager-count { font-variant-numeric: tabular-nums; }
+.pager-page { font-variant-numeric: tabular-nums; color: var(--ink-2); min-width: 42px; text-align: center; }
+.pager .btn { padding: 2px 10px; font-size: 14px; line-height: 1.2; }
+.pager .btn:disabled { opacity: 0.35; cursor: default; }
+.pager .btn:disabled:hover { border-color: var(--ring); color: var(--ink-2); }
+
+.pager-size { display: inline-flex; align-items: center; gap: 6px; }
+.pager-size select {
+  background: var(--card); color: var(--ink-2);
+  border: 1px solid var(--ring); border-radius: 8px;
+  padding: 3px 6px; font: inherit; font-size: 12.5px; cursor: pointer;
+}
+.pager-size select:hover { border-color: var(--ring-strong); color: var(--ink); }
+.pager-size select:focus-visible { outline: 2px solid var(--ring-strong); outline-offset: 2px; }
+
+/* A totals row reads as a conclusion, not another row of data. */
+table.data tfoot td { padding: 10px; color: var(--ink-2); font-weight: 500; }
+table.data tfoot td.num { font-variant-numeric: tabular-nums; }

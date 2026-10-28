@@ -1,0 +1,23 @@
+{
+  "_comment": [
+    "Units that exist without a purchase in any tradebook: a corporate action",
+    "created them, or they predate the export window. Copy this file to",
+    "opening-lots.json (gitignored) and add your own. Each lot seeds the FIFO queue",
+    "before the tape is replayed, so a later sell has a cost basis to match against.",
+    "Every entry is a claim about history that no export can prove, so say where",
+    "its number came from in `why`."
+  ],
+  "lots": [
+    {
+      "symbol": "EXAMPLE",
+      "isin": "INE000A01000",
+      "qty": "10",
+      "cost_per_unit": "100.00",
+      "date": "2025-01-01",
+      "why": [
+        "Example demerger: the parent's cost basis was apportioned between the two",
+        "resulting stocks, using the ratio your broker publishes."
+      ]
+    }
+  ]
+}

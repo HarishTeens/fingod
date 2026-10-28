@@ -1,0 +1,77 @@
+# fingod — local stack.
+#
+#   make up          → db only (the normal dev loop; api+web run natively for hot reload)
+#   make up-tools    → db + adminer on :8081
+#   make up-all      → db + the single-binary api image (what gets deployed to cloud)
+#
+# Everything binds to 127.0.0.1 only. This database holds a complete picture of
+# personal net worth; it must never be reachable from the LAN.
+
+name: fingod
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: fingod-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fingod}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-fingod}
+      # Deterministic collation so ORDER BY on labels/categories is stable across
+      # machines — matters the day this moves to a cloud Postgres.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fingod} -d ${POSTGRES_DB:-fingod}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Browse the DB at http://localhost:8081 — server "db", user/pass from .env.
+  adminer:
+    image: adminer:5
+    container_name: fingod-adminer
+    restart: unless-stopped
+    profiles: ["tools"]
+    ports:
+      - "127.0.0.1:${ADMINER_PORT:-8081}:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: dracula
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # The deployable artifact: one Go binary with the React build embedded.
+  # Not used in the dev loop — `make api` / `make web` run natively instead.
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fingod-api
+    restart: unless-stopped
+    profiles: ["full"]
+    ports:
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+    environment:
+      FINGOD_DB_URL: postgres://${POSTGRES_USER:-fingod}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-fingod}?sslmode=disable
+      FINGOD_API_TOKEN: ${FINGOD_API_TOKEN:?set FINGOD_API_TOKEN in .env}
+      FINGOD_ADDR: ":8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/fingod", "-healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  pgdata:
+    name: fingod-pgdata

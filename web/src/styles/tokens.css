@@ -1,0 +1,112 @@
+/* fingod design tokens.
+ *
+ * Consumed by role, never as raw hex in a component. Dark is the default and
+ * both themes are *selected* — the light values are their own steps, not an
+ * inversion of the dark ones, because an inverted dark palette reads muddy.
+ */
+
+:root,
+[data-theme='dark'] {
+  --page:        #0d0d0d;
+  --card:        #141416;
+  --ink:         #ffffff;
+  --ink-2:       #c3c2b7;
+  --muted:       #898781;
+  --gridline:    #2c2c2a;
+  --baseline:    #383835;
+  --ring:        rgba(255, 255, 255, 0.10);
+  --ring-strong: rgba(255, 255, 255, 0.18);
+
+  /* Sleeve colours — fixed per entity, assigned in this order, never cycled.
+   * Validated with the dataviz palette validator against #141416: all seven
+   * pass the lightness band, chroma floor, adjacent-pair CVD separation,
+   * normal-vision floor and 3:1 contrast. Worst adjacent pair is
+   * gold <-> fd at ΔE 19.3 normal / 8.4 protan — unchanged by adding gold,
+   * i.e. the 7th colour costs nothing.
+   *
+   * Gold takes the amber that Bitcoin used to have, because gold *is* gold.
+   * Bitcoin moved to violet, which is the furthest free hue from everything
+   * except in_equity's blue — hence the fixed order below keeps those two
+   * apart. Re-run the validator if any hue changes. */
+  --sleeve-in_equity: #3987e5;
+  --sleeve-in_mf:     #d95926;
+  --sleeve-us_equity: #199e70;
+  --sleeve-gold:      #c98500;
+  --sleeve-debt:      #00a2c7;
+  --sleeve-fd:        #d55181;
+  --sleeve-btc:       #7d76e8;
+  --sleeve-epf:       #008300;
+  --sleeve-cash:      #898781;
+  --sleeve-liquid:    #898781;
+  /* Closed-only, so it never shares a chart with the live sleeves. */
+  --sleeve-insurance: #6e6c67;
+
+  /* Categorical ramp for labels, which are user-defined and so cannot have
+   * fixed semantic colours the way sleeves do. Same validated hues, in the same
+   * validated order; a label is assigned a slot by a hash of its own name, so
+   * "House" keeps its colour whatever else is on screen and adding a label
+   * never repaints the others. The two catch-alls are deliberately neutral. */
+  --cat-1: #3987e5;
+  --cat-2: #d95926;
+  --cat-3: #199e70;
+  --cat-4: #c98500;
+  --cat-5: #00a2c7;
+  --cat-6: #d55181;
+  --cat-7: #7d76e8;
+  --cat-8: #008300;
+  /* Neutral, but measured: both must clear 3:1 on the card. The first pass put
+   * Untagged at #4a4945, which is 2.04:1 on #141416 — a segment you cannot see
+   * is not a neutral choice, it is a missing one. Untagged is the lighter of
+   * the two so it reads as the odd one out rather than as more "Other". */
+  --cat-other:    #898781;   /* 5.12:1 */
+  --cat-untagged: #b5b3ab;   /* 8.76:1 */
+
+  /* Status is a separate channel from series identity, and always ships as
+   * icon + signed value + colour — never colour alone. Necessary anyway, since
+   * series green (EPF) sits close to status good. */
+  --good:     #0ca30c;
+  --critical: #d03b3b;
+}
+
+[data-theme='light'] {
+  --page:        #f4f3f0;
+  --card:        #faf9f7;
+  --ink:         #0b0b0b;
+  --ink-2:       #52514e;
+  --muted:       #898781;
+  --gridline:    #e1e0d9;
+  --baseline:    #c3c2b7;
+  --ring:        rgba(11, 11, 11, 0.10);
+  --ring-strong: rgba(11, 11, 11, 0.18);
+
+  /* Light passes every check except contrast, where us_equity, gold and fd sit
+   * at 2.06–2.68:1 on #faf9f7. That WARN is **not dismissable**: it obligates
+   * the relief rule, which is why every chart here ships direct labels and a
+   * table-view toggle. */
+  --sleeve-in_equity: #2a78d6;
+  --sleeve-in_mf:     #eb6834;
+  --sleeve-us_equity: #1baf7a;
+  --sleeve-gold:      #eda100;
+  --sleeve-debt:      #00a8cc;
+  --sleeve-fd:        #e87ba4;
+  --sleeve-btc:       #6f68d8;
+  --sleeve-epf:       #008300;
+  --sleeve-cash:      #898781;
+  --sleeve-liquid:    #898781;
+  /* Closed-only, so it never shares a chart with the live sleeves. */
+  --sleeve-insurance: #6e6c67;
+
+  --cat-1: #2a78d6;
+  --cat-2: #eb6834;
+  --cat-3: #1baf7a;
+  --cat-4: #eda100;
+  --cat-5: #00a8cc;
+  --cat-6: #e87ba4;
+  --cat-7: #6f68d8;
+  --cat-8: #008300;
+  --cat-other:    #898781;   /* 3.41:1 on #faf9f7 */
+  --cat-untagged: #5c5a56;   /* 6.54:1 — light mode inverts which is darker */
+
+  --good:     #0a8a0a;
+  --critical: #c22f2f;
+}

@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "kite": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.kite.trade/mcp"
+      ],
+      "comment": "Direct HTTP gets a Cloudflare 403, so the mcp-remote bridge is required. mcp-remote needs Node >= 20.18.1 (see .nvmrc), so make sure `npx` resolves to a recent Node."
+    },
+    "wallet": {
+      "type": "http",
+      "url": "https://mcp.wallet.budgetbakers.com",
+      "headers": {
+        "Authorization": "Bearer ${WALLET_MCP_TOKEN}"
+      },
+      "comment": "Verified working over plain streamable HTTP with the access token. Needs WALLET_MCP_TOKEN exported \u2014 use `make claude`, which sources .env first."
+    },
+    "indmoney": {
+      "type": "http",
+      "url": "https://mcp.indmoney.com/mcp",
+      "comment": "Returns 401 with OAuth 2.1 + PKCE discovery metadata; Claude Code handles the flow natively."
+    }
+  }
+}

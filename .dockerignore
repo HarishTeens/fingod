@@ -1,0 +1,9 @@
+.env
+.env.local
+.git/
+node_modules/
+web/dist/
+api/bin/
+api/internal/httpapi/webdist/
+docs/
+*.md

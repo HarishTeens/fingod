@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fingod — one view of everything you own</title>
+<meta name="description" content="A local-first net worth and portfolio tracker. Weekly checkpoints from Wallet, Zerodha and INDmoney. Growth derived from quantity, not price feeds.">
+<style>
+  :root {
+    --page:#0d0d0d; --card:#141416; --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --ring:rgba(255,255,255,.10); --ring-strong:rgba(255,255,255,.18);
+    --equity:#3987e5; --mf:#d95926; --us:#199e70; --gold:#c98500; --debt:#00a2c7; --fd:#d55181; --btc:#7d76e8;
+    --good:#0ca30c; --critical:#d03b3b;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing:border-box; margin:0; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--page); color:var(--ink-2); font:16px/1.6 var(--sans); -webkit-font-smoothing:antialiased; }
+  a { color:inherit; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+  section { padding:96px 0; border-top:1px solid var(--grid); }
+  h1,h2,h3 { color:var(--ink); line-height:1.15; letter-spacing:-.02em; font-weight:650; }
+  h1 { font-size:clamp(40px,7vw,68px); }
+  h2 { font-size:clamp(28px,4vw,40px); margin-bottom:16px; }
+  h3 { font-size:18px; letter-spacing:-.01em; margin-bottom:6px; }
+  .eyebrow { font:600 12px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; }
+  .lede { font-size:19px; max-width:640px; color:var(--ink-2); }
+  .mono { font-family:var(--mono); }
+  .muted { color:var(--muted); }
+
+  nav { position:sticky; top:0; z-index:5; background:rgba(13,13,13,.85); backdrop-filter:blur(10px); border-bottom:1px solid var(--grid); }
+  nav .wrap { display:flex; align-items:center; justify-content:space-between; height:56px; }
+  nav .logo { font:700 17px var(--mono); color:var(--ink); text-decoration:none; }
+  nav ul { display:flex; gap:24px; list-style:none; padding:0; font-size:14px; }
+  nav ul a { text-decoration:none; color:var(--muted); } nav ul a:hover { color:var(--ink); }
+  @media (max-width:720px){ nav ul { display:none; } }
+
+  .hero { padding:104px 0 80px; }
+  .hero h1 em { font-style:normal; color:var(--muted); }
+  .hero .lede { margin:24px 0 32px; }
+  .cta { display:inline-block; font:600 14px var(--mono); color:#0d0d0d; background:#fff; padding:10px 18px; border-radius:8px; text-decoration:none; }
+  .cta:hover { background:var(--ink-2); }
+  .pills { display:flex; flex-wrap:wrap; gap:8px; }
+  .pill { font:500 13px var(--mono); padding:6px 12px; border:1px solid var(--ring-strong); border-radius:999px; color:var(--ink-2); }
+  .pill i { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; }
+
+  .card { background:var(--card); border:1px solid var(--ring); border-radius:14px; padding:24px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  @media (max-width:860px){ .grid2,.grid3,.grid4 { grid-template-columns:1fr; } }
+  .card p { font-size:15px; color:var(--muted); }
+  .sub { margin:8px 0 40px; max-width:620px; }
+
+  /* mock UI */
+  .mock { margin-top:56px; }
+  .mock-bar { display:flex; gap:6px; padding:0 0 14px; }
+  .mock-bar span { width:10px; height:10px; border-radius:50%; background:var(--grid); }
+  .stat-label { font:600 11px var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .stat { font:650 34px var(--sans); color:var(--ink); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .chip { font:600 12px var(--mono); color:var(--good); }
+  .chip.neg { color:var(--critical); }
+  .stats { display:flex; gap:48px; flex-wrap:wrap; margin-bottom:20px; }
+  svg { display:block; width:100%; height:auto; }
+  .note { font:12px var(--mono); color:var(--muted); margin-top:14px; }
+
+  /* connectors */
+  .src h3 { display:flex; align-items:center; gap:10px; }
+  .src .tag { font:600 11px var(--mono); padding:2px 8px; border-radius:6px; background:#1d1d20; color:var(--muted); letter-spacing:.04em; }
+  .src ul { list-style:none; padding:0; margin-top:14px; font-size:14px; }
+  .src li { padding:7px 0; border-top:1px solid var(--grid); display:flex; justify-content:space-between; gap:12px; }
+  .src li span:last-child { color:var(--muted); font-family:var(--mono); font-size:12px; text-align:right; }
+  .flow { font:13px/1.9 var(--mono); color:var(--ink-2); overflow-x:auto; white-space:pre; }
+  .flow b { color:var(--ink); font-weight:600; }
+
+  /* steps */
+  .steps { counter-reset:s; display:grid; gap:0; }
+  .step { display:grid; grid-template-columns:56px 1fr; padding:22px 0; border-top:1px solid var(--grid); }
+  .step:before { counter-increment:s; content:counter(s,decimal-leading-zero); font:600 14px var(--mono); color:var(--muted); padding-top:3px; }
+  .step p { color:var(--muted); font-size:15px; max-width:620px; }
+
+  .split { display:flex; height:36px; border-radius:8px; overflow:hidden; margin:16px 0 8px; font:600 12px var(--mono); color:#fff; }
+  .split div { display:flex; align-items:center; padding-left:10px; white-space:nowrap; }
+  .legend { display:flex; gap:20px; font:12px var(--mono); color:var(--muted); flex-wrap:wrap; }
+  .legend i { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:6px; }
+
+  pre.code { background:#0a0a0b; border:1px solid var(--ring); border-radius:10px; padding:18px 20px; font:13px/1.7 var(--mono); color:var(--ink-2); overflow-x:auto; }
+  pre.code .k { color:var(--muted); } pre.code .v { color:#7fb2f0; }
+
+  /* allocation table */
+  table { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; }
+  th { text-align:left; font:600 11px var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:0 0 10px; }
+  td { padding:11px 0; border-top:1px solid var(--grid); }
+  td.n, th.n { text-align:right; }
+  .bar { height:6px; border-radius:3px; background:var(--grid); position:relative; min-width:90px; }
+  .bar b { position:absolute; left:0; top:0; bottom:0; border-radius:3px; }
+  .bar u { position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--ink); }
+
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:6px 18px; font:13px var(--mono); }
+  .kv dt { color:var(--muted); } .kv dd { color:var(--ink); margin:0; }
+  .shot { margin-top:20px; border:1px solid var(--ring-strong); border-radius:14px; overflow:hidden; background:var(--card); }
+  .shot .chrome { display:flex; align-items:center; gap:6px; padding:12px 16px; border-bottom:1px solid var(--grid); font:12px var(--mono); color:var(--muted); }
+  .shot .chrome span { width:10px; height:10px; border-radius:50%; background:var(--grid); }
+  .shot .chrome em { font-style:normal; margin-left:10px; }
+  .shot img { display:block; width:100%; height:auto; }
+  .shotcap { font:12px var(--mono); color:var(--muted); margin-top:12px; }
+  footer { border-top:1px solid var(--grid); padding:48px 0; font-size:14px; color:var(--muted); }
+  .feat { font-size:15px; }
+  .feat h3 { font-size:16px; }
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a class="logo" href="#top">fingod</a>
+  <ul>
+    <li><a href="#product">Dashboard</a></li>
+    <li><a href="#sources">Sources</a></li>
+    <li><a href="#checkpoints">Checkpoints</a></li>
+    <li><a href="#performance">Performance</a></li>
+    <li><a href="#networth">Net worth</a></li>
+    <li><a href="#allocation">Allocation</a></li>
+    <li><a href="#local">Local-first</a></li>
+    <li><a href="https://github.com/HarishTeens/fingod" rel="noopener">GitHub ↗</a></li>
+  </ul>
+</div></nav>
+
+<header class="hero" id="top"><div class="wrap">
+  <div class="eyebrow">Personal finance, assembled</div>
+  <h1>One view of everything you own. <em>Running on your own machine.</em></h1>
+  <p class="lede">fingod pulls your bank balances, credit cards, Indian stocks, mutual funds, US equity and crypto into a single timeline of weekly checkpoints — then tells you what actually grew, and what you simply added.</p>
+  <div style="margin-bottom:20px"><a class="cta" href="https://github.com/HarishTeens/fingod" rel="noopener">View on GitHub ↗</a></div>
+  <div class="pills">
+    <span class="pill"><i style="background:var(--debt)"></i>Wallet</span>
+    <span class="pill"><i style="background:var(--equity)"></i>Zerodha Kite</span>
+    <span class="pill"><i style="background:var(--us)"></i>INDmoney</span>
+    <span class="pill"><i style="background:var(--btc)"></i>CoinDCX · manual</span>
+  </div>
+
+  <div class="card mock">
+    <div class="mock-bar"><span></span><span></span><span></span></div>
+    <div class="stats">
+      <div><div class="stat-label">Net worth · liquid</div><div class="stat">₹ 9,17,000</div><div class="chip">▲ 1.8% this checkpoint</div></div>
+      <div><div class="stat-label">Net worth · total</div><div class="stat">₹ 10,01,000</div><div class="chip">▲ 1.4% this checkpoint</div></div>
+    </div>
+    <svg viewBox="0 0 960 220" role="img" aria-label="Illustrative net worth line">
+      <g stroke="#2c2c2a" stroke-width="1"><line x1="0" y1="40" x2="960" y2="40"/><line x1="0" y1="100" x2="960" y2="100"/><line x1="0" y1="160" x2="960" y2="160"/><line x1="0" y1="210" x2="960" y2="210" stroke="#383835"/></g>
+      <path d="M0,190 L60,184 L120,176 L180,180 L240,165 L300,158 L360,160 L420,140 L480,132 L540,138 L600,112 L660,104 L720,90 L780,96 L840,70 L900,62 L960,52 L960,210 L0,210Z" fill="#3987e5" opacity=".10"/>
+      <path d="M0,190 L60,184 L120,176 L180,180 L240,165 L300,158 L360,160 L420,140 L480,132 L540,138 L600,112 L660,104 L720,90 L780,96 L840,70 L900,62 L960,52" fill="none" stroke="#3987e5" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M0,200 L60,196 L120,190 L180,192 L240,182 L300,178 L360,176 L420,164 L480,158 L540,160 L600,146 L660,140 L720,128 L780,130 L840,114 L900,108 L960,98" fill="none" stroke="#898781" stroke-width="2" stroke-dasharray="5 5"/>
+    </svg>
+    <div class="note">Illustrative figures. Solid: total · dashed: liquid.</div>
+  </div>
+</div></header>
+
+<section id="product"><div class="wrap">
+  <div class="eyebrow">The dashboard</div>
+  <h2>See it working.</h2>
+  <p class="lede sub">Real screens from the app, rendered with invented numbers. Light and dark themes included.</p>
+  <div class="shot"><div class="chrome"><span></span><span></span><span></span><em>localhost:5173 · Dashboard</em></div><img src="shots/dash.png" alt="fingod dashboard: net worth, allocation and spend by label" loading="lazy"></div>
+  <div class="shotcap">Dashboard — liquid and total net worth, the two-line history, allocation donut and monthly spend by label.</div>
+  <div class="shot"><div class="chrome"><span></span><span></span><span></span><em>localhost:5173 · Investments</em></div><img src="shots/inv.png" alt="fingod investments: sleeves indexed to 100 and market, flow and FX split" loading="lazy"></div>
+  <div class="shotcap">Investments — every sleeve indexed to 100, with each sleeve’s change split into market, flow and FX.</div>
+</div></section>
+
+<section id="sources"><div class="wrap">
+  <div class="eyebrow">Sources</div>
+  <h2>Four sources. One owner each.</h2>
+  <p class="lede sub">Brokers overlap and disagree. fingod gives every asset class exactly one source of truth and discards the rest, rather than reconciling two numbers you then have to trust.</p>
+
+  <div class="grid4">
+    <div class="card src">
+      <h3>Wallet <span class="tag">MCP</span></h3>
+      <p>Your expense ledger and everyday money.</p>
+      <ul><li><span>Cash &amp; savings</span><span>balances</span></li><li><span>Credit cards</span><span>outstanding</span></li><li><span>Transactions</span><span>categories, labels</span></li></ul>
+    </div>
+    <div class="card src">
+      <h3>Zerodha Kite <span class="tag">MCP</span></h3>
+      <p>Indian markets, straight from the demat.</p>
+      <ul><li><span>Equity &amp; ETFs</span><span>qty, avg cost</span></li><li><span>Mutual funds</span><span>units, NAV</span></li><li><span>Gold &amp; liquid</span><span>by ISIN</span></li></ul>
+    </div>
+    <div class="card src">
+      <h3>INDmoney <span class="tag">MCP</span></h3>
+      <p>The window into US stocks and retirement.</p>
+      <ul><li><span>US equity</span><span>USD price, FX</span></li><li><span>EPF</span><span>per employer</span></li><li><span>US wallet cash</span><span>idle USD</span></li></ul>
+    </div>
+    <div class="card src">
+      <h3>CoinDCX <span class="tag">manual</span></h3>
+      <p>No API? You type two numbers.</p>
+      <ul><li><span>Bitcoin quantity</span><span>defaults to last</span></li><li><span>Current value</span><span>one prompt</span></li><li><span>FDs · Splitwise</span><span>entered once</span></li></ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="flow"><b>/refresh</b>  ── in Claude Code
+   ├─ Wallet MCP      →  cash, credit cards, expense transactions
+   ├─ Kite MCP        →  Indian equity, mutual funds, gold, liquid funds
+   ├─ INDmoney MCP    →  US equity, EPF, US wallet cash
+   └─ asks you        →  Bitcoin quantity + value
+                         └──►  POST /api/v1/checkpoints  ──►  Postgres  ──►  dashboard</div>
+  </div>
+
+  <div class="grid3" style="margin-top:20px">
+    <div class="card feat"><h3>Read-only by construction</h3><p>The refresh routine never places, modifies or cancels an order — even if asked mid-run.</p></div>
+    <div class="card feat"><h3>Resilient to a bad day</h3><p>If one source is down, its sleeve is carried forward and marked stale, so the series never reads as a crash to zero.</p></div>
+    <div class="card feat"><h3>Classified once</h3><p>An unknown account blocks the checkpoint until you say what it is. A fixed deposit never gets quietly counted as cash.</p></div>
+  </div>
+</div></section>
+
+<section id="checkpoints"><div class="wrap">
+  <div class="eyebrow">Checkpoints</div>
+  <h2>A snapshot, not a feed.</h2>
+  <p class="lede sub">A checkpoint is an immutable record of every position on one date. Weekly, or whenever you ask. It never polls — and that is the whole trick.</p>
+
+  <div class="grid2">
+    <div class="steps">
+      <div class="step"><div><h3>Take it</h3><p>Say “take a checkpoint”. Claude reads each source and asks for only what no server can supply.</p></div></div>
+      <div class="step"><div><h3>Send quantity and price</h3><p>Never a computed total. Value is calculated in Postgres as <span class="mono">round(qty × price × fx, 2)</span> and cross-checked against the source’s own number.</p></div></div>
+      <div class="step"><div><h3>Diff against last time</h3><p>Quantities that rose are money you added. Prices that moved are the market. Currency that shifted is FX.</p></div></div>
+      <div class="step"><div><h3>Sales detected for free</h3><p>A quantity that fell is a sale. fingod asks for the real exit price and books the realised gain on the exact shares sold.</p></div></div>
+    </div>
+    <div class="card">
+      <div class="stat-label">What changed this week · illustrative</div>
+      <div class="stat" style="margin-top:6px">+ ₹ 15,000</div>
+      <div class="split">
+        <div style="width:22%;background:var(--us)">Market</div>
+        <div style="width:70%;background:var(--equity)">Flow · money you added</div>
+        <div style="width:8%;background:var(--btc)"></div>
+      </div>
+      <div class="legend"><span><i style="background:var(--us)"></i>Market gain</span><span><i style="background:var(--equity)"></i>Flow</span><span><i style="background:var(--btc)"></i>FX</span></div>
+      <p style="margin-top:20px">“Up ₹15,000” is not an answer. “₹3,300 of gain and ₹10,500 of money you added” is — and a SIP can never masquerade as market performance.</p>
+      <pre class="code" style="margin-top:20px"><span class="k">POST</span> /api/v1/checkpoints
+{ <span class="k">"as_of_date"</span>: <span class="v">"2026-10-29"</span>,
+  <span class="k">"sources"</span>: { <span class="k">"kite"</span>:<span class="v">"ok"</span>, <span class="k">"wallet"</span>:<span class="v">"stale"</span> },
+  <span class="k">"holdings"</span>: [{ <span class="k">"isin"</span>:<span class="v">"INE…"</span>, <span class="k">"qty"</span>:<span class="v">"42"</span>, <span class="k">"price"</span>:<span class="v">"917.25"</span> }] }</pre>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-top:20px">
+    <div class="card feat"><h3>Idempotent</h3><p>Re-post the same date and it replaces. Re-ingest transactions and nothing duplicates.</p></div>
+    <div class="card feat"><h3>Immutable history</h3><p>Closing an FD stamps a date instead of deleting a row, so past weeks never silently rewrite.</p></div>
+    <div class="card feat"><h3>Honest about gaps</h3><p>Bought and sold between two checkpoints? It says plainly that weekly resolution can’t see that.</p></div>
+  </div>
+</div></section>
+
+<section id="performance"><div class="wrap">
+  <div class="eyebrow">Portfolio performance</div>
+  <h2>Every sleeve, indexed to 100.</h2>
+  <p class="lede sub">Compare Indian equity, mutual funds, US stocks, gold and Bitcoin on one axis, over one week or all time — with real cost basis behind every return.</p>
+
+  <div class="card">
+    <div style="display:flex;gap:8px;margin-bottom:18px;font:12px var(--mono)">
+      <span class="pill" style="padding:3px 10px">1 week</span><span class="pill" style="padding:3px 10px">1 month</span><span class="pill" style="padding:3px 10px;background:#1d1d20;color:#fff">3 months</span><span class="pill" style="padding:3px 10px">1 year</span><span class="pill" style="padding:3px 10px">All</span>
+    </div>
+    <svg viewBox="0 0 960 260" role="img" aria-label="Illustrative indexed performance">
+      <g stroke="#2c2c2a"><line x1="0" y1="50" x2="960" y2="50"/><line x1="0" y1="110" x2="960" y2="110"/><line x1="0" y1="170" x2="960" y2="170"/></g>
+      <line x1="0" y1="140" x2="960" y2="140" stroke="#383835" stroke-dasharray="3 4"/>
+      <text x="4" y="134" fill="#898781" font-family="monospace" font-size="11">100</text>
+      <g fill="none" stroke-width="2.2" stroke-linejoin="round">
+        <path stroke="#7d76e8" d="M0,140 L80,120 L160,150 L240,100 L320,70 L400,90 L480,50 L560,64 L640,36 L720,58 L800,30 L880,44 L960,24"/>
+        <path stroke="#c98500" d="M0,140 L80,136 L160,130 L240,126 L320,118 L400,120 L480,108 L560,100 L640,104 L720,92 L800,86 L880,84 L960,76"/>
+        <path stroke="#199e70" d="M0,140 L80,142 L160,136 L240,128 L320,134 L400,122 L480,126 L560,114 L640,118 L720,108 L800,112 L880,100 L960,104"/>
+        <path stroke="#3987e5" d="M0,140 L80,146 L160,152 L240,148 L320,158 L400,150 L480,156 L560,146 L640,152 L720,144 L800,150 L880,142 L960,146"/>
+        <path stroke="#d95926" d="M0,140 L80,150 L160,160 L240,158 L320,170 L400,176 L480,168 L560,180 L640,186 L720,178 L800,190 L880,184 L960,192"/>
+      </g>
+    </svg>
+    <div class="legend" style="margin-top:14px"><span><i style="background:var(--btc)"></i>Bitcoin</span><span><i style="background:var(--gold)"></i>Gold</span><span><i style="background:var(--us)"></i>US equity</span><span><i style="background:var(--equity)"></i>Indian equity</span><span><i style="background:var(--mf)"></i>Mutual funds</span></div>
+    <div class="note">Illustrative series, not real data.</div>
+  </div>
+
+  <div class="grid3" style="margin-top:20px">
+    <div class="card feat"><h3>Since bought</h3><p>Returns against true cost basis. US cost comes from the broker order book, FIFO’d at the exchange rate on each trade date — not a flat back-converted rate.</p></div>
+    <div class="card feat"><h3>Realised gains</h3><p>Every sale with its buy date, exit date, holding period and profit — by month or by year.</p></div>
+    <div class="card feat"><h3>52-week price watch</h3><p>Each refresh flags mega-cap US stocks near their low or deep below their high, and your gold ETF, so a falling knife doesn’t go unnoticed.</p></div>
+  </div>
+</div></section>
+
+<section id="networth"><div class="wrap">
+  <div class="eyebrow">Net worth tracking</div>
+  <h2>Two numbers, defined once.</h2>
+  <p class="lede sub">What you could deploy, and what you’re worth on paper. Both tracked at every checkpoint, back to your first one.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="stat-label">Liquid</div>
+      <div class="stat" style="font-size:26px;margin:4px 0 14px">what you can act on</div>
+      <dl class="kv">
+        <dt>+</dt><dd>cash &amp; savings</dd>
+        <dt>+</dt><dd>Indian equity &amp; mutual funds</dd>
+        <dt>+</dt><dd>US equity</dd>
+        <dt>+</dt><dd>Bitcoin</dd>
+        <dt>+</dt><dd>fixed-deposit principal</dd>
+        <dt>−</dt><dd>credit card outstanding</dd>
+      </dl>
+    </div>
+    <div class="card">
+      <div class="stat-label">Total</div>
+      <div class="stat" style="font-size:26px;margin:4px 0 14px">what you’re worth</div>
+      <dl class="kv">
+        <dt>=</dt><dd>liquid</dd>
+        <dt>+</dt><dd>EPF, per employer</dd>
+        <dt>+</dt><dd>fixed-deposit accrued interest</dd>
+        <dt>+</dt><dd>Splitwise receivable</dd>
+      </dl>
+      <p style="margin-top:16px">EPF is never presented as market gain — contribution and interest can’t be separated, so it isn’t pretended.</p>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-top:20px">
+    <div class="card feat"><h3>Fixed deposits, valued daily</h3><p>Principal, rate and compounding value a deposit at any date — even checkpoints taken before you entered it.</p></div>
+    <div class="card feat"><h3>Splitwise, bottom line only</h3><p>One figure per person: positive if they owe you, negative if you owe them. The app stays the system of record.</p></div>
+    <div class="card feat"><h3>Expenses, drillable</h3><p>Weekly or monthly spend by label, down through category and subcategory to the single transaction.</p></div>
+  </div>
+</div></section>
+
+<section id="allocation"><div class="wrap">
+  <div class="eyebrow">Portfolio allocation</div>
+  <h2>Where you are versus where you meant to be.</h2>
+  <p class="lede sub">Set a target for every sleeve. fingod shows the drift after each checkpoint, so rebalancing is a decision you make with numbers rather than a feeling.</p>
+
+  <div class="grid2">
+    <div class="card" style="display:flex;align-items:center;gap:28px;flex-wrap:wrap;justify-content:center">
+      <svg viewBox="0 0 120 120" style="width:220px" role="img" aria-label="Illustrative allocation donut">
+        <g transform="rotate(-90 60 60)" fill="none" stroke-width="22">
+          <circle cx="60" cy="60" r="40" stroke="#d95926" stroke-dasharray="85.4 165.9" stroke-dashoffset="0"/>
+          <circle cx="60" cy="60" r="40" stroke="#3987e5" stroke-dasharray="65.3 186" stroke-dashoffset="-85.4"/>
+          <circle cx="60" cy="60" r="40" stroke="#d55181" stroke-dasharray="35.2 216.1" stroke-dashoffset="-150.7"/>
+          <circle cx="60" cy="60" r="40" stroke="#199e70" stroke-dasharray="25.1 226.2" stroke-dashoffset="-185.9"/>
+          <circle cx="60" cy="60" r="40" stroke="#c98500" stroke-dasharray="12.6 238.7" stroke-dashoffset="-211"/>
+          <circle cx="60" cy="60" r="40" stroke="#7d76e8" stroke-dasharray="12.6 238.7" stroke-dashoffset="-223.6"/>
+          <circle cx="60" cy="60" r="40" stroke="#00a2c7" stroke-dasharray="15.1 236.2" stroke-dashoffset="-236.2"/>
+        </g>
+      </svg>
+      <div class="legend" style="flex-direction:column;gap:8px;font-size:13px">
+        <span><i style="background:var(--mf)"></i>Mutual funds</span><span><i style="background:var(--equity)"></i>Indian equity</span><span><i style="background:var(--fd)"></i>Fixed deposits</span><span><i style="background:var(--us)"></i>US equity</span><span><i style="background:var(--gold)"></i>Gold</span><span><i style="background:var(--btc)"></i>Bitcoin</span><span><i style="background:var(--debt)"></i>Debt</span>
+      </div>
+    </div>
+    <div class="card">
+      <table>
+        <tr><th>Sleeve</th><th>Actual vs target</th><th class="n">Drift</th></tr>
+        <tr><td>Mutual funds</td><td><div class="bar"><b style="width:34%;background:var(--mf)"></b><u style="left:35%"></u></div></td><td class="n chip neg">−1.0%</td></tr>
+        <tr><td>Indian equity</td><td><div class="bar"><b style="width:26%;background:var(--equity)"></b><u style="left:27%"></u></div></td><td class="n chip neg">−1.0%</td></tr>
+        <tr><td>Fixed deposits</td><td><div class="bar"><b style="width:14%;background:var(--fd)"></b><u style="left:15%"></u></div></td><td class="n chip neg">−1.0%</td></tr>
+        <tr><td>US equity</td><td><div class="bar"><b style="width:12%;background:var(--us)"></b><u style="left:10%"></u></div></td><td class="n chip">+2.0%</td></tr>
+        <tr><td>Gold</td><td><div class="bar"><b style="width:6%;background:var(--gold)"></b><u style="left:5%"></u></div></td><td class="n chip">+1.0%</td></tr>
+        <tr><td>Bitcoin</td><td><div class="bar"><b style="width:5%;background:var(--btc)"></b><u style="left:5%"></u></div></td><td class="n muted">0.0%</td></tr>
+      </table>
+      <div class="note">Marker = target. Illustrative percentages.</div>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-top:20px">
+    <div class="card feat"><h3>Drill into any sleeve</h3><p>Open a sleeve to see every holding, sortable by value, cost, gain or weight.</p></div>
+    <div class="card feat"><h3>Debt and gold, correctly filed</h3><p>Liquid ETFs count as debt and gold ETFs as gold — matched by ISIN, not by ticker names that change.</p></div>
+    <div class="card feat"><h3>Colour that stays put</h3><p>Every sleeve keeps its colour across every chart, checked for colour-blind separation.</p></div>
+  </div>
+</div></section>
+
+<section id="local"><div class="wrap">
+  <div class="eyebrow">Local-first</div>
+  <h2>Your data never leaves your machine.</h2>
+  <p class="lede sub">No account, no cloud, no subscription. A Postgres database and a small Go service on your own computer, with a React dashboard on top.</p>
+
+  <div class="grid3">
+    <div class="card feat"><h3>Bound to localhost</h3><p>Every container listens on 127.0.0.1 only. Nothing is exposed to the network.</p></div>
+    <div class="card feat"><h3>Token on every route</h3><p>All API calls need a bearer token generated on your machine. Secrets live in a private, gitignored <span class="mono">.env</span>.</p></div>
+    <div class="card feat"><h3>Postgres is the record</h3><p>Plain SQL migrations, exact NUMERIC arithmetic, and a schema you can inspect with any database tool.</p></div>
+  </div>
+
+  <pre class="code" style="margin-top:20px">git clone https://github.com/HarishTeens/fingod.git
+make env      <span class="k"># once — fresh secrets</span>
+make up       <span class="k"># Postgres on 127.0.0.1</span>
+make migrate  <span class="k"># apply schema</span>
+make api      <span class="k"># Go API on :8080</span>
+make web      <span class="k"># dashboard on :5173</span></pre>
+</div></section>
+
+<footer><div class="wrap">
+  <span class="mono" style="color:var(--ink)">fingod</span> — an open-source personal project · <a href="https://github.com/HarishTeens/fingod" rel="noopener" style="color:var(--ink)">github.com/HarishTeens/fingod</a>. All figures and screenshots on this page use invented numbers; no real data is shown.
+</div></footer>
+
+</body>
+</html>
