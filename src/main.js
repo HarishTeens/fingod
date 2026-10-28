@@ -2,7 +2,7 @@
 // whole app's entry point, loaded as a native ES module.
 import * as db from './db.js'
 import { hasData } from './repo.js'
-import { syncInbox, inboxFailures } from './ingest.js'
+import { syncInbox as importInbox, inboxFailures } from './ingest.js'
 import { isDemo, loadDemo } from './demo.js'
 import { esc } from './ui/format.js'
 
@@ -65,6 +65,10 @@ function fatal(e) {
   document.getElementById('page').innerHTML = `<div class="empty"><b>Something broke while drawing this page.</b><br><code>${esc(e.message)}</code><br><br>Your data is safe in this browser. Try another tab, or export a backup from Data.</div>`
   window.__fingodErrors = (window.__fingodErrors || []).concat(String(e.stack || e))
 }
+
+// Demo data is invented and must never be mixed with real files, so while it is loaded
+// nothing is imported from data/. Clearing the demo (Data page) resets and imports them.
+const syncInbox = () => (isDemo() ? Promise.resolve({ available: true, imported: [], errors: [] }) : importInbox())
 
 // Pick up whatever the agent dropped into data/ — quietly, every few seconds.
 async function poll() {

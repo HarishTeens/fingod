@@ -17,8 +17,8 @@ session started anywhere else: it clones the repo, and tells you to restart insi
 connectors. Nothing is ever traded: every connector is
 read-only, and your data stays in your browser and in a gitignored `data/` folder.
 
-Works with: **Wallet** (expenses, cash, cards), **Zerodha Kite** (Indian stocks and funds), **INDmoney**
-(US stocks, EPF) and **Bitcoin** (typed in). Use only the ones you have.
+Works with **Wallet** (expenses, cash, cards), **Zerodha Kite** (Indian stocks and funds) and **INDmoney** (US stocks; EPF comes
+through it). Bitcoin, fixed deposits and Splitwise are simply typed in. Use only the ones you have.
 
 You don't need an agent to try it. Run `python3 -m http.server 8000 --bind 127.0.0.1`, open <http://localhost:8000> and choose
 **Explore with demo data**.

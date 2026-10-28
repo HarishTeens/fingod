@@ -37,20 +37,34 @@ export function lineChart({ series, height = 280, yFormat = String, xFormat, zer
     `<text x="${pad.l - 8}" y="${sy(t) + 4}" text-anchor="end" fill="var(--muted)" font-size="11.5" style="${mono}">${esc(yFormat(t))}</text>`).join('')
   const base = baseline !== null ? `<line x1="${pad.l}" x2="${W - pad.r}" y1="${sy(baseline)}" y2="${sy(baseline)}" stroke="var(--baseline)" stroke-dasharray="3 4"/>` : ''
 
-  const nx = Math.min(7, new Set(xs).size)
-  const xticks = [...new Set(xs)].sort((a, b) => a - b)
-  const picked = nx <= 1 ? xticks : Array.from({ length: nx }, (_, i) => xticks[Math.round((i * (xticks.length - 1)) / (nx - 1))])
-  const xl = [...new Set(picked)].map((x) => `<text x="${sx(x)}" y="${height - 8}" text-anchor="middle" fill="var(--muted)" font-size="11.5">${esc(xFormat ? xFormat(x) : '')}</text>`).join('')
+  // Dates are rarely evenly spaced, so choose x labels by distance on screen, not by index:
+  // keep one only if it clears the previous label's width. The latest point is always labelled.
+  const MIN_GAP = 84
+  const uniq = [...new Set(xs)].sort((a, b) => a - b)
+  const kept = []
+  for (const x of uniq) if (!kept.length || sx(x) - sx(kept[kept.length - 1]) >= MIN_GAP) kept.push(x)
+  const lastX = uniq[uniq.length - 1]
+  if (kept[kept.length - 1] !== lastX) {
+    if (kept.length > 1 && sx(lastX) - sx(kept[kept.length - 1]) < MIN_GAP) kept.pop()
+    kept.push(lastX)
+  }
+  const xl = kept.map((x) => `<text x="${sx(x)}" y="${height - 8}" text-anchor="middle" fill="var(--muted)" font-size="11.5">${esc(xFormat ? xFormat(x) : '')}</text>`).join('')
+
+  // End-of-line labels: lines often finish within a few pixels of each other, so spread the
+  // labels vertically (top to bottom, then back up if that ran off the bottom) so each stays legible.
+  const LABEL_GAP = 13.5
+  const ends = labelEnds ? live.map((s) => { const last = s.points[s.points.length - 1]; return { s, x: sx(last[0]) + 8, y: sy(last[1]) + 4 } }).sort((a, b) => a.y - b.y) : []
+  for (let i = 0; i < ends.length; i++) { const min = i ? ends[i - 1].y + LABEL_GAP : pad.t + 6; if (ends[i].y < min) ends[i].y = min }
+  for (let i = ends.length - 1; i >= 0; i--) { const max = i < ends.length - 1 ? ends[i + 1].y - LABEL_GAP : height - pad.b; if (ends[i].y > max) ends[i].y = max }
+  const endText = ends.map((e) => `<text x="${e.x}" y="${e.y.toFixed(1)}" fill="${e.s.color}" font-size="11.5">${esc(e.s.endLabel ?? yFormat(e.s.points[e.s.points.length - 1][1]))}</text>`).join('')
 
   const lines = live.map((s) => {
     const pts = s.points.map((p) => `${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`)
     const path = s.points.length > 1 ? `<polyline points="${pts.join(' ')}" fill="none" stroke="${s.color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>` : ''
     const dots = s.points.map((p) => `<circle cx="${sx(p[0]).toFixed(1)}" cy="${sy(p[1]).toFixed(1)}" r="${s.points.length === 1 ? 4 : 7}" fill="${s.points.length === 1 ? s.color : 'transparent'}"><title>${esc(s.label)} · ${esc(xFormat ? xFormat(p[0]) : '')} · ${esc(yFormat(p[1]))}</title></circle>`).join('')
-    const last = s.points[s.points.length - 1]
-    const end = labelEnds ? `<text x="${sx(last[0]) + 8}" y="${sy(last[1]) + 4}" fill="${s.color}" font-size="11.5">${esc(s.endLabel ?? yFormat(last[1]))}</text>` : ''
-    return path + dots + end
+    return path + dots
   }).join('')
-  return `<svg viewBox="0 0 ${W} ${height}" role="img" aria-label="${esc(title)}" style="width:100%;height:auto;display:block">${grid}${base}${xl}${lines}</svg>`
+  return `<svg viewBox="0 0 ${W} ${height}" role="img" aria-label="${esc(title)}" style="width:100%;height:auto;display:block">${grid}${base}${xl}${lines}${endText}</svg>`
 }
 
 /** periods: [{period, label, segments: {key: n}}]; keys in stacking order. */
