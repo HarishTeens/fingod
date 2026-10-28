@@ -68,8 +68,8 @@ Map to `POST /api/v1/transactions`: `txn_date` is the date part of `recordDate`;
 
 Wallet has no field that identifies a fixed deposit: a deposit is typed `General`, with
 `isInvestmentAccount: false`, exactly like a salary account. Type alone cannot decide what belongs in
-the cash total, so fingod stores an explicit **role** per account (`cash`, `credit_card`, `ignore`)
-and refuses a checkpoint while any account has none.
+the cash total, so the refresh routine asks you for an explicit **role** per account (`cash`,
+`credit_card`, `ignore`) and remembers the answer in `data/config.json`. A role is never guessed.
 
 Credit cards report debt as a **negative** balance. fingod stores outstanding as **positive**, so flip
 the sign.
@@ -166,8 +166,8 @@ Deriving both from the source's own figures keeps `value_inr == qty × price × 
 FX quote would break that constraint.
 
 `invested_amount` back-converts the USD cost at a **flat rate** regardless of purchase date, which
-misstates cost and inflates the gain. fingod ignores it. Cost basis for US equity is derived from the
-broker order book by `make import-us-orders` and stored in `us_cost_basis`.
+misstates cost and inflates the gain, so fingod ignores it. US rows carry no cost basis unless the
+user supplies a true rupee figure.
 
 ### `networth_holdings(EPF)`
 

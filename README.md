@@ -1,47 +1,91 @@
 # fingod
 
-**One view of everything you own, running on your own machine.**
+**Your net worth, on your own machine.**
 
-fingod assembles your expenses, investments and balances from Wallet, Zerodha, INDmoney and a few
-manual figures into a single timeline of weekly **checkpoints**. It then tells you what actually
-grew and what you simply added, so a ₹50k SIP never masquerades as ₹50k of market gain.
+fingod connects Wallet, Zerodha, INDmoney and Bitcoin through your coding assistant, then shows what
+actually grew and what you simply added. It runs entirely in your browser: vanilla JavaScript and
+SQLite compiled to WebAssembly. **No backend, no database server, no build step, no account.**
 
 ![fingod dashboard: net worth, allocation and monthly spend by label](landing/shots/dash.png)
 
-<sub>Rendered from invented numbers. No real data is shown anywhere in this repository.</sub>
+<sub>Rendered from invented demo data. No real data appears anywhere in this repository.</sub>
+
+## Set it up in one prompt
+
+Paste this into [Claude Code](https://claude.com/claude-code), or any coding assistant with shell access
+and MCP support:
+
+```text
+Set up fingod for me, a local-first net worth tracker. If this repo isn't already in your working folder,
+clone https://github.com/HarishTeens/fingod and work from there. Then:
+
+1. Start it with `python3 serve.py` (leave it running) and open http://localhost:8000 for me.
+2. Read CLAUDE.md, docs/DATA-FORMAT.md and .claude/skills/refresh/SKILL.md.
+3. Ask me which of these I use: Wallet (expenses), Zerodha Kite (Indian stocks and funds), INDmoney
+   (US stocks, EPF), Bitcoin (manual). Connect only those, one at a time, using the MCP servers declared
+   in .mcp.json. Walk me through each login.
+4. Pull my data and write it as JSON into the data/ folder, exactly as docs/DATA-FORMAT.md describes.
+   The app imports it by itself and shows my dashboard.
+5. Tell me what you found, and what moved since last time split into market, flow and FX.
+
+Rules: read-only. Never place, modify or cancel an order. Never commit anything from data/. Ask me
+before anything that depends on my preferences.
+```
+
+The same prompt lives in [PROMPT.md](PROMPT.md). Your assistant clones the repo, starts the app, and
+walks you through each login. The app's setup journey shows live status as your data arrives.
+
+## Or just look around
+
+```bash
+git clone https://github.com/HarishTeens/fingod.git
+cd fingod
+python3 serve.py        # → http://localhost:8000
+```
+
+Open it and choose **Explore with demo data**, or go to `http://localhost:8000/?demo`. There is nothing to
+install: no npm, no bundler. You need Python 3 (only for `serve.py`, a tiny static file server) and a
+modern browser.
+
+![The setup journey: choose Wallet, Kite, INDmoney, EPF and Bitcoin](landing/shots/onboarding.png)
 
 ## Features
 
 - **Net worth, two ways.** *Liquid* is what you could act on; *total* adds EPF, accrued FD interest and
-  Splitwise receivables. Both are stored at every checkpoint, back to your first.
+  Splitwise receivables. Both are computed at every checkpoint.
 - **Growth, split honestly.** Every change between checkpoints is separated into **market**, **flow**
-  (money you added or withdrew) and **FX**. The three sum exactly to the change.
-- **Performance across sleeves.** Indian equity, mutual funds, US equity, gold, debt and Bitcoin on one
-  axis indexed to 100, with returns against true cost basis.
-- **Allocation against targets.** Set a target per sleeve and see the drift after each checkpoint.
-- **Realised profit.** Sales are detected by diffing checkpoints; win rate, holding period and gross
-  wins versus losses are tracked, bucketed on the exit date.
+  (money you added or withdrew) and **FX**. The three sum exactly to the change, so a ₹50k SIP never
+  masquerades as ₹50k of market gain.
+- **Performance across assets.** Indian equity, mutual funds, US equity, gold, debt, Bitcoin and fixed
+  deposits on one axis indexed to 100, time-weighted so money you add or take out never distorts it.
+- **Allocation against targets.** Set a target per asset and see the drift and what to buy or sell.
+- **Realised profit.** Sales are detected by diffing checkpoints; you confirm the sale price and it is
+  recorded, with win rate, holding period and gross wins versus gross losses.
 - **Expenses you can drill into.** Weekly or monthly spend by label, down through category to the single
   transaction, net of money that came back.
 - **A 52-week price watch** on every refresh, for mega-cap US stocks and your gold ETF.
-- **Local-first and read-only.** Postgres on `127.0.0.1`, a bearer token on every route, and a refresh
-  routine that can never place an order.
+- **Local and read-only.** Your data lives in your browser and in a gitignored folder. Nothing is ever
+  traded.
 
-![fingod investments: every sleeve indexed to 100, with market, flow and FX](landing/shots/inv.png)
+![Every sleeve indexed to 100, with market, flow and FX](landing/shots/inv.png)
 
 ## How it works
 
 ```
-Claude Code — /refresh
+Your coding agent
    ├─ Wallet MCP      → expense transactions, cash, credit cards
    ├─ Kite MCP        → Indian equity, Indian mutual funds
    ├─ INDmoney MCP    → US equity, EPF
-   └─ prompts you     → Bitcoin (CoinDCX has no MCP), FDs, Splitwise
-                    └──► POST /api/v1/checkpoints ──► Postgres ──► React UI
+   └─ asks you        → Bitcoin
+        └──► writes JSON into data/  ──►  serve.py lists it  ──►  the browser imports it into SQLite
 ```
 
-A checkpoint is an immutable snapshot of every position on one date. Nothing polls. Growth is derived
-by diffing consecutive checkpoints and watching **quantity**:
+Browsers can't speak MCP, and your broker credentials should never touch a web page. So **your assistant
+does the connecting**, on your machine, and the only thing that crosses into the app is plain JSON in a
+folder that git ignores.
+
+A **checkpoint** is an immutable snapshot of every position on one date. Nothing polls. Growth is
+derived by diffing consecutive checkpoints and watching **quantity**:
 
 ```
 market =  qty_prev × (price_now − price_prev) × fx_now
@@ -49,8 +93,7 @@ flow   = (qty_now − qty_prev) × price_now × fx_now
 fx     =  qty_prev × price_prev × (fx_now − fx_prev)
 ```
 
-Those three terms sum to the change in value as an algebraic identity, not an approximation. Read
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design.
+Those three terms sum to the change in value as an algebraic identity, not an approximation.
 
 Each source owns exactly one set of assets, because overlapping sources disagree and reconciling them
 only hides which one is wrong:
@@ -62,67 +105,38 @@ only hides which one is wrong:
 | INDmoney | US equity, EPF |
 | Manual | Bitcoin, fixed deposits, Splitwise |
 
-## Quick start
-
-```bash
-make env        # once — generates .env with fresh secrets
-make up         # Postgres on 127.0.0.1:5432
-make migrate    # apply the schema
-make api        # Go API on :8080
-make web        # Vite dev server on :5173 (separate shell)
-```
-
-Want to look around first? **`make demo`** runs the dashboard on invented data, with no accounts,
-database or API needed.
-
-Then connect your sources and take a checkpoint. [docs/SETUP.md](docs/SETUP.md) covers the MCP servers,
-classifying Wallet accounts and the optional importers. Inside Claude Code in this directory:
-
-```
-/refresh
-```
-
-`make` on its own lists every command. Requirements are Docker, Go 1.24+, Node 20.19+ and Claude Code.
-
 ## Documentation
 
 | Doc | What |
 |---|---|
-| [docs/SETUP.md](docs/SETUP.md) | Install, connect sources, take a first checkpoint, importers |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The qty-diff engine, sleeves, net worth, data model, API |
+| [PROMPT.md](PROMPT.md) | The one-prompt setup |
+| [docs/DATA-FORMAT.md](docs/DATA-FORMAT.md) | The JSON files your agent writes |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The qty-diff engine, sleeves, net worth, data model |
 | [docs/MCP-SHAPES.md](docs/MCP-SHAPES.md) | What each MCP server returns and how it maps to a checkpoint |
-| [CLAUDE.md](CLAUDE.md) | Guidance for Claude Code working in this repo |
+| [CLAUDE.md](CLAUDE.md) | Guidance for coding agents working in this repo |
 | [`.claude/skills/refresh`](.claude/skills/refresh/SKILL.md) | The `/refresh` routine |
-| [`landing/`](landing/index.html) | A static landing page for the project |
+| [`landing/`](landing/index.html) | The landing page |
 
-## Layout
+## Privacy and security
 
-| Path | What |
-|---|---|
-| `api/` | Go API: `compute/` (where correctness lives), `domain/`, `store/`, `httpapi/`, SQL `migrations/` |
-| `web/` | React 19 + Vite 7 + Recharts 3 |
-| `scripts/` | Importers for broker exports |
-| `docker-compose.yml`, `Dockerfile` | Postgres, Adminer, and a packaged single-binary image |
-
-## Security and privacy
-
-- Every container binds to `127.0.0.1`. Every `/api/v1` route needs a bearer token; only `/healthz` is
-  open.
-- `.env` holds the database password, the API token and optionally a Wallet token. It is gitignored.
-- The refresh routine is read-only. It never calls `place_order`, `modify_order`, `cancel_order` or the
-  GTT equivalents.
-- Your data lives in your own Postgres. Exports, the FX cache and `opening-lots.json` are gitignored.
-  Don't commit them, and don't commit screenshots of your own dashboard.
+- Your data stays on your machine: in your browser's SQLite database, and in `data/`, which is
+  gitignored. There is no account, server, telemetry or analytics.
+- Every connector is read-only. The refresh routine never calls `place_order`, `modify_order`,
+  `cancel_order` or the GTT equivalents.
+- `serve.py` binds to `127.0.0.1` only.
+- The database lives in browser storage, so clearing site data erases it. **Data → Download backup**
+  saves a `.sqlite` file you can restore anywhere.
+- Never commit anything from `data/`, and never commit a screenshot of your own dashboard.
 
 ## Tests
 
 ```bash
-make test        # Go tests, including property tests of the qty-diff identity
-make web-smoke   # render every dashboard component against a live API
+node --test tests/      # 30 tests: the engine, plus ingest validation. Node 20+, no dependencies.
 ```
 
 ## License
 
-Licensed under the [Apache License 2.0](LICENSE). Use it, change it and ship it as you like; the
-license asks only that you keep the notice and say what you changed. It comes with no warranty, and
-nothing here is financial advice.
+Licensed under the [Apache License 2.0](LICENSE). Use it, change it and ship it as you like; the license
+asks only that you keep the notice and say what you changed. It comes with no warranty, and nothing here
+is financial advice. SQLite is compiled to WebAssembly by [sql.js](https://github.com/sql-js/sql.js)
+(MIT), vendored in `vendor/`.

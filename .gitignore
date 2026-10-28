@@ -1,48 +1,23 @@
-# Secrets — this file holds the DB password, API token and Wallet MCP token.
-.env
-.env.local
+# Your data never belongs in git. The agent writes it here; the browser imports it.
+/data/*
+!/data/README.md
 
-# Go
-/api/bin/
-*.test
-coverage.out
-
-# Node
-node_modules/
-/web/dist/
-# The Vite build is copied in here at package time; only the marker is tracked,
-# so go:embed always has a directory to embed in a fresh clone.
-/api/internal/httpapi/webdist/*
-!/api/internal/httpapi/webdist/.gitkeep
-.vite/
-npm-debug.log*
-
-# Editor / OS
+# Local scratch and leftovers
 .DS_Store
 .idea/
 .vscode/
-
-# Local scratch
-/tmp/
-*.dump
-
-# Throwaway venv for the legacy .xls reader (see import-us-orders).
-/.venv-xls/
-
-# AMFI NAV cache — re-fetchable, and large.
-/scripts/mf-navs/
-
-# wrangler files
 .wrangler
 .dev.vars*
-!.dev.vars.example
-!.env.example
+.claude/settings.local.json
+node_modules/
 
-# Personal data and derived caches — never commit these.
-/scripts/opening-lots.json
+# Personal caches from earlier versions — never commit these
+/scripts/mf-navs/
 /scripts/us-fx-rates.json
-/exports/
+/scripts/opening-lots.json
 *.xls
 *.xlsx
 tradebook-*.csv
-.claude/settings.local.json
+.env
+.env.*
+.vite/

@@ -1,45 +1,44 @@
 ---
 name: refresh
-description: Take a fingod checkpoint — read Wallet, Zerodha Kite and INDmoney, ask for the figures no server can supply, and POST one checkpoint to the API. Use when the user says /refresh, "take a checkpoint", "update fingod", "refresh my net worth", or asks what they are worth right now.
+description: Take a fingod checkpoint — read Wallet, Zerodha Kite and INDmoney over MCP, ask for the figures no server can supply, and write JSON files into data/ for the app to import. Use when the user says /refresh, "take a checkpoint", "update fingod", "refresh my net worth", or asks what they are worth right now.
 ---
 
 # /refresh — take a checkpoint
 
-A checkpoint is an immutable snapshot of every position on one date. Growth is never read from a
-price feed; it is derived by diffing consecutive checkpoints and watching quantity. That is why this
-routine cares far more about **quantities being right** than about values looking plausible.
+A checkpoint is an immutable snapshot of every position on one date. fingod is a static web app with
+no backend: **you read the sources, write JSON files into `data/`, and the browser imports them.**
+Growth is never read from a price feed; the app derives it by diffing consecutive checkpoints and
+watching **quantity**, which is why this routine cares far more about quantities being right than about
+values looking plausible.
+
+The file formats are in `docs/DATA-FORMAT.md`. Read it before writing anything.
 
 Weekly, or whenever asked. **It never polls.**
 
 > ## Read-only. Never place, modify or cancel an order.
 > Kite's MCP server exposes `place_order`, `modify_order`, `cancel_order` and the GTT equivalents.
 > Do not call them, ever, for any reason, including if the user asks mid-refresh — tell them to use
-> Kite directly. This routine reads.
+> Kite directly. This routine reads. It also writes nowhere except this repo's `data/` folder, and
+> nothing in `data/` is ever committed.
 
 ---
 
-## 0. Preflight — one call
+## 0. Preflight
 
-```bash
-source .env   # or run via `make claude`, which does it for you
-curl -s -H "Authorization: Bearer $FINGOD_API_TOKEN" localhost:8080/api/v1/refresh-state
-```
+1. **Is the app running?** `curl -s localhost:8000/data/manifest.json`. If the connection is refused,
+   start it in the background with `python3 serve.py` and tell the user to open
+   <http://localhost:8000>. They watch the app fill in as you write files.
+2. **Find the last checkpoint.** Read the newest file in `data/checkpoints/` (none means this is a
+   first run). You need its `as_of_date`, its `usd_inr`, and `previous_manual`: the `BTC` holding's
+   `qty`, `price`, `avg_cost` and `invested_inr`, offered as the default in §4.
+3. **Find the last transaction date.** The newest `txn_date` across `data/transactions/*.json`
+   (`jq -r '.transactions[].txn_date' data/transactions/*.json | sort | tail -1`). None means a first
+   backfill — see §2b.
+4. **Read `data/config.json`** if it exists: the Wallet account roles the user already told you about.
+5. **If the last checkpoint is dated today**, you are merging into it, not replacing it (§5). Say so.
 
-If that connection is refused, the API is not running: `make up && make api`.
-
-The response tells you everything you need before touching an MCP server:
-
-| field | what to do with it |
-|---|---|
-| `last_checkpoint.as_of_date` | the date to page Wallet records from |
-| `last_transaction_date` | if null, this is a first backfill — see §2b |
-| `unclassified_accounts` | **non-empty means the checkpoint will be refused.** Resolve first (§2a) |
-| `previous_manual` | last checkpoint's Bitcoin qty and price — offer as the default |
-| `fixed_deposits`, `splitwise` | standing rows. **Do not collect these.** They snapshot themselves |
-| `sleeves` | the valid sleeve names; anything else is rejected |
-
-If `last_checkpoint.as_of_date` is today, ask whether to replace it before continuing. Re-posting is
-safe and idempotent, but say so rather than silently overwriting.
+Fixed deposits, Splitwise and target allocation are **standing rows entered in the app**. Do not
+collect them. If the user volunteers a change, tell them to edit it under **Data → Re-run setup**.
 
 ---
 
@@ -53,7 +52,7 @@ Call `mcp__kite__get_profile` first. If it returns "Please log in first", call `
 give the user the link **with the warning the tool tells you to show**, and wait. The link is
 single-use and dies on an `/mcp reconnect`, so mint it immediately before showing it.
 
-### `get_holdings` → `in_equity` and `gold`
+### `get_holdings` → `in_equity`, `gold`, `debt`
 
 | field | maps to | note |
 |---|---|---|
@@ -61,34 +60,29 @@ single-use and dies on an `/mcp reconnect`, so mint it immediately before showin
 | `isin` | `isin` | **required** — the diff matches on it, and tickers get renamed |
 | `quantity` **+** `t1_quantity` | `qty` | T+1 stock is bought and paid for. Omitting it books the purchase a period late |
 | `last_price` | `price` | |
-| `average_price` | `avg_cost`; also `invested_inr` = `round(qty × average_price, 2)` | **required** — omit it and the Investments tab loses its cost basis (it once read 311%). `qty` here is `quantity` + `t1_quantity` |
-| — | `currency: "INR"`, `fx_rate: "1"` | |
+| `average_price` | `avg_cost`; also `invested_inr` = `round(qty × average_price, 2)` | omit it and the holding has no return figure. `qty` here is `quantity` + `t1_quantity` |
+| — | `currency: "INR"` | |
 
-Four symbols are not equity. Everything else in the feed is `in_equity`:
+Gold and overnight ETFs are not equity. Classify by **ISIN**, not ticker; everything else is
+`in_equity`:
 
 ```
-GOLDBEES    INF204KB17I5   → gold
-GOLDCASE    INF0R8F01042   → gold
-LIQUIDCASE  INF0R8F01034   → debt     (Zerodha Nifty 1D Rate Liquid ETF)
-LIQUIDBEES  INF732E01037   → debt     (Nippon India Nifty 1D Rate Liquid BeES)
+INF204KB17I5  (GOLDBEES)    → gold
+INF0R8F01042  (GOLDCASE)    → gold
+INF0R8F01034  (LIQUIDCASE)  → debt     (overnight-rate ETF: cash parked in the demat)
+INF732E01037  (LIQUIDBEES)  → debt
 ```
-
-Match on the ISIN, not the ticker. The debt pair went `liquid` → `in_equity` → `debt` across
-migrations `0003`, `0005` and `0007`; `debt` is where they belong. The name `liquid` now means the
-bank balances in the allocation table, not these.
 
 ### `get_mf_holdings` → `in_mf`
 
 `tradingsymbol` **is** the ISIN, so it fills both `symbol` and `isin`. `fund` → `name`,
-`quantity` → `qty`, `last_price` → `price` (that is the NAV). `average_price` → `avg_cost`,
-and `invested_inr` = `round(qty × average_price, 2)`, as for equity. INR, fx 1.
-
-Ignore `pnl` and `last_price_date`: both are dead fields, always `0` and `""`.
+`quantity` → `qty`, `last_price` → `price` (that is the NAV), `average_price` → `avg_cost`,
+`invested_inr` = `round(qty × average_price, 2)`. Ignore `pnl` and `last_price_date`: both are dead.
 
 ### `get_margins` → idle broker cash
 
-`equity.available.cash` → a `cash` balance with `ref: "Zerodha equity"` and
-`meta: {"source": "kite get_margins"}`. Usually a few hundred rupees, but Wallet cannot see it.
+`equity.available.cash` → a `cash` balance with `ref: "Zerodha equity"`. Usually tiny, but Wallet
+cannot see it.
 
 ---
 
@@ -100,40 +94,23 @@ Ignore `pnl` and `last_price_date`: both are dead fields, always `0` and `""`.
 mcp__wallet__get_accounts(limit: 20)     # 20 is the hard maximum for THIS tool
 ```
 
-Roles are **not** in the Wallet response — read them from
-`GET /api/v1/wallet-accounts`. Then:
+`balance` is a nested object: read `balance.currentBalance`, not `balance`.
 
-- `role: cash` → a `cash` balance, `amount_inr = balance.currentBalance`
-- `role: credit_card` → a `credit_card` balance, `amount_inr = -balance.currentBalance`
-  (Wallet reports debt negative; the schema stores it **positive as outstanding**)
-- `role: ignore` → skip entirely
+**An account's role is never guessed.** Wallet types a fixed deposit `General` with
+`isInvestmentAccount: false`, identical to a salary account, so inferring would fold a large deposit
+into cash. For every account not already in `data/config.json`, ask the user: `cash`, `credit_card`, or
+`ignore` (fixed deposits are `ignore`: they are tracked in the app). Save the answers to
+`data/config.json` so you never ask twice. Then:
 
-`balance` is a nested object. Read `balance.currentBalance`, not `balance`.
+- `cash` → a `cash` balance, `amount_inr = balance.currentBalance`
+- `credit_card` → a `credit_card` balance, `amount_inr = -balance.currentBalance`
+  (Wallet reports debt negative; fingod stores it **positive** as outstanding)
+- `ignore` → skip
 
-**Wallet is the source for every cash balance.** A deliberate design choice: one provider for the whole
-category, rather than a per-account mix whose provenance you have to remember. Take
-`balance.currentBalance` and do not reconcile it against anything.
-
-Worth knowing rather than acting on: Wallet accounts that are not bank-synced (`isBankSync: false`)
-report a running total of manually entered records, which can drift from the real bank balance. That
-drift is carried deliberately — the fix belongs in Wallet, at the source, not in an override here.
-
-The `balance_source` column exists for an account that should read from elsewhere, and is `wallet`
-by default. If it is ever anything else, take the figure from the INDmoney `SA` row named by
-`external_ref` and set `meta.source` to say so. Until then, §3's "discard SA" is absolute.
-
-**Any account with a null role blocks the checkpoint.** Nothing is guessed here: Wallet types a
-fixed deposit `General` with `isInvestmentAccount: false`, identical to a salary account, so
-inferring could fold a large deposit into cash. Ask the user which it is, then:
-
-```bash
-curl -X PATCH localhost:8080/api/v1/wallet-accounts/{id} \
-  -H "Authorization: Bearer $FINGOD_API_TOKEN" -H 'Content-Type: application/json' \
-  -d '{"role":"cash","role_note":"why"}'      # cash | credit_card | ignore
-```
-
-Always send every account you saw in `wallet_accounts` on the checkpoint payload, whatever its role
-— that is how new ones get discovered and how `last_seen_at` stays current.
+**Wallet is the source for every cash balance**: one provider for the whole category, rather than a
+per-account mix whose provenance you have to remember. Accounts that are not bank-synced
+(`isBankSync: false`) report a running total of manual entries that can drift from the real bank
+balance. That drift is carried deliberately — the fix belongs in Wallet.
 
 ### 2b. Records
 
@@ -143,56 +120,37 @@ mcp__wallet__get_records(recordDate: ["gte.<from>"], recordState: ["cleared"], l
 
 **Ask for 400.** `get_records` allows it — the 20 cap is `get_accounts` only. A 400-record page
 overflows the tool-result budget and Claude Code spills it to a file under `tool-results/`; that is
-what you want, not a failure. Process the file with `jq` or python so the records never enter your
-context:
+what you want, not a failure. Process the file with `jq` or Python so the records never enter your
+context.
 
-```bash
-python3 -c "import json;d=json.load(open('<saved file>'));print(d['total'],len(d['records']))"
-```
+`from` = the last transaction date **minus 7 days**. The overlap is deliberate: Wallet lets a record's
+date be edited after the fact, and import is idempotent on Wallet's own record id, so re-sending is free
+and missing a back-dated correction is not. On a first backfill, page from the earliest date you can
+find (`recordStats.recordDate.min` across the accounts).
 
-`from` = `last_transaction_date` **minus 7 days**. The overlap is deliberate: Wallet lets a record's
-date be edited after the fact, and ingest is idempotent on Wallet's own record id, so re-sending is
-free and missing a back-dated correction is not.
+Watch `_meta.rateLimit.remaining` on every response and stop at ~20 remaining. It refills 5 a minute
+and is shared with Wallet's own API.
 
-If `last_transaction_date` is null this is a first backfill — page from the earliest
-`recordStats.recordDate.min` across the accounts. At 400 a page that is typically only a handful of
-requests, so just do it; there is no need to offer a partial.
-
-Watch `_meta.rateLimit.remaining` on every response and stop at ~20 remaining rather than counting
-calls yourself. It refills 5/minute. Records are cheap now, but the budget is shared with Wallet's
-REST API, so a same-hour second refresh can still throttle.
-
-Map each record, then POST in batches to `/api/v1/transactions`:
+Write `data/transactions/wallet-<today>.json` as `{"transactions": [...]}`, one entry per record:
 
 ```jsonc
-{ "id": "<record id>",  "txn_date": "<recordDate, date part only>",
-  "amount_inr": <amount.value>, "currency": "<amount.currencyCode>",
-  "account": "<accountName>", "note": "<note>",
-  "category_id": "<category.id>", "category": "<category.name>",
-  "category_top": "<category.group.name>",
-  "is_transfer": <transfer !== null>,
-  "labels": ["<labels[].name>"], "raw": { …the whole record… } }
+{ "id": "<record id>", "txn_date": "<recordDate, date part only>",
+  "amount_inr": <amount.value>, "currency": "<amount.currencyCode>", "account": "<accountName>",
+  "note": "<note>", "category_id": "<category.id>", "category": "<category.name>",
+  "category_top": "<category.group.name>", "is_transfer": <transfer !== null>,
+  "labels": ["<labels[].name>"] }
 ```
-
-Categories and labels arrive inline on every record — no per-transaction lookups, which is the only
-reason the rate limit is survivable.
-
-**Transactions are POSTed separately from the checkpoint.** They are not part of the checkpoint
-payload.
 
 ---
 
 ## 3. INDmoney — US equity, EPF and US wallet cash only
 
 Every other field is discarded. INDmoney overlaps Zerodha on Indian stocks and mutual funds and is
-*worse* on both; it reports crypto with no quantity; its `SA` and `liabilities` duplicate Wallet;
-its `FD` list is empty. Take three things and leave.
-
-Each tool returns `{"result": "<json string>"}` — parse the payload a **second** time.
+*worse* on both; it reports crypto with no quantity; its bank accounts and liabilities duplicate
+Wallet. Take three things and leave. Each tool returns `{"result": "<json string>"}`: parse the
+payload a **second** time.
 
 ### `networth_holdings(asset_type: "US_STOCK")` → `us_equity`
-
-The checkpoint's exchange rate comes from INDmoney's own numbers, never an external quote:
 
 ```
 usd_inr = asset_summary.total_value / asset_summary.total_value_usd
@@ -201,161 +159,106 @@ usd_inr = asset_summary.total_value / asset_summary.total_value_usd
 Per row: `investment_code` → `symbol`, `investment` → `name`, `total_units` → `qty`,
 **`current_value_usd / total_units` → `price`**, `currency: "USD"`, `fx_rate: usd_inr`.
 
-`unit_price` is in **rupees** even for US stocks — do not use it as the price. Deriving the USD price
-gives exact cents and a rate identical to six decimal places on every row, which is what keeps
-`value_inr == qty × price × fx` exact. An external FX quote would break the CHECK constraint.
+`unit_price` is in **rupees** even for US stocks — do not use it. Deriving the USD price gives exact
+cents and an identical rate on every row, which is what keeps `qty × price × fx` equal to INDmoney's own
+rupee total. Never use an external FX quote.
 
-**Never send `invested_amount` as `invested_inr`.** That field is not the rupees you paid: it
-back-converts the USD cost at a flat **92.0000** whatever the purchase date — identical to four
-decimals across every holding, while the real rates on those trade dates varied widely. Trusting it
-misstates cost and inflates the sleeve's gain, which is what INDmoney's own dashboard disagreed with.
-
-Cost basis for `us_equity` is owned by the `us_cost_basis` table, FIFO'd from the broker order book
-by `make import-us-orders`. The server reads it there and **discards whatever the payload says**, so
-omit `invested_inr` and `avg_cost` on US rows entirely. If a US position's quantity has changed since
-the last import, the basis no longer describes it: the server stores NULL rather than a stale number
-and the checkpoint comes back with a warning naming the symbol. That is the signal to re-export the
-order report from INDmoney and re-run the importer — not something to paper over.
-
-Current *value* still comes from INDmoney every checkpoint. That one is live and correct; only the
-cost side was wrong.
-
-### `networth_holdings(asset_type: "SA")` → discard
-
-A Wallet duplicate, and Wallet wins. Only fetch it if some account carries
-`balance_source: "indmoney"`, which none currently do.
+**Never send `invested_amount` as `invested_inr`.** It back-converts the USD cost at a flat rate
+whatever the purchase date, which misstates cost and inflates the gain. Omit `invested_inr` on US
+rows unless the user gives you a true rupee cost basis.
 
 ### `networth_holdings(asset_type: "EPF")` → balances
 
-One row per employer. `investment` → `ref`, `market_value` → `amount_inr`, kind `epf`.
-Keep them separate; a job change then reads as one row ending and another starting.
-
-EPF cannot be split into contribution versus interest — INDmoney holds a single number per
-establishment. Never present an EPF change as market gain.
+One row per employer: `investment` → `ref`, `market_value` → `amount_inr`, kind `epf`. Keep them
+separate; a job change then reads as one row ending and another starting. EPF cannot be split into
+contribution versus interest, so never present an EPF change as market gain.
 
 ### `networth_snapshot` → US wallet cash
 
-Idle dollars sitting in the INDmoney US brokerage wallet are liquid, and Wallet cannot see them,
-same as Kite's idle cash in §1. `networth_holdings` has no asset type for it; the only place it
-appears is `networth_snapshot`, in `investments[]` as `asset_type: "US_STOCK_WALLET"`.
-
-`current_value` → a `cash` balance with `ref: "INDmoney US wallet"`, `amount_inr` that figure, and
-`meta: {"source": "indmoney networth_snapshot US_STOCK_WALLET"}`. It is rupees only, with no USD
-figure. Take nothing else from the snapshot. If `US_STOCK_WALLET` is absent the wallet is empty, so
-send no row rather than a zero.
+Idle dollars in the INDmoney US wallet are liquid and Wallet cannot see them. They appear in
+`investments[]` as `asset_type: "US_STOCK_WALLET"`; `current_value` (rupees only) becomes a `cash`
+balance with `ref: "INDmoney US wallet"`. If it is absent the wallet is empty: send no row.
 
 ---
-
-## 3b. Detect what was sold
-
-Neither source will tell you. Kite's `get_trades`, `get_orders` and `get_positions` return **today
-only** — all three came back `total: 0` when probed on a non-trading day — and INDmoney has no
-transactions endpoint at all, only holdings, market data, SIPs and a watchlist. Past orders do not
-exist over MCP.
-
-So a sale is detected as the difference between two checkpoints. After posting, ask:
-
-```bash
-curl -s -H "Authorization: Bearer $FINGOD_API_TOKEN" localhost:8080/api/v1/disposals
-```
-
-Anything whose quantity fell is a sale. The response carries the quantity sold, the cost of exactly
-those shares (average cost × quantity, the same basis a broker uses), and an estimate of the proceeds
-**at the previous checkpoint's price**.
-
-**That estimate is the one number to confirm, never assume.** The snapshot only ever sees what is
-still held, so the actual sale price is the single thing it cannot know — a week of movement sits
-between the last seen price and the truth. Ask the user what it went out at, offer the estimate as the
-default, then record it:
-
-```bash
-curl -X POST localhost:8080/api/v1/trades -H "Authorization: Bearer $FINGOD_API_TOKEN" \
-  -H 'Content-Type: application/json' -d '{"trades":[{
-    "sleeve":"in_equity","symbol":"ACME","exit_date":"2026-09-12",
-    "invested_inr":"40000.00","realised_inr":"8000.00","source":"refresh"}]}'
-```
-
-Trades already recorded are filtered out, so re-running a refresh never offers the same sale twice.
-
-> **Two blind spots, and they are structural.** A stock bought *and* sold between two checkpoints is
-> invisible — it never appears in a snapshot, so nothing can detect it. And a week where you both
-> sold 300 and bought 100 of the same stock nets to a 200-share disposal, understating what was
-> realised. Weekly checkpoints mean weekly resolution here as everywhere else. If a trade matters and
-> happened inside the week, the user has to say so.
 
 ## 4. Manual — Bitcoin only
 
-CoinDCX has no MCP. INDmoney reports a crypto *value* with `total_units: null`, so it cannot feed
-the qty-diff engine, and it has read low when compared. Ask:
+CoinDCX has no MCP. INDmoney reports a crypto *value* with `total_units: null`, so it cannot feed the
+quantity engine. Ask:
 
-- **quantity** — default to `previous_manual.BTC.qty` from preflight
+- **quantity** — default to `previous_manual.qty`
 - **current total value in ₹**
 
-Then `price = value / qty`, to 8 decimal places, `currency: "INR"`, `fx_rate: "1"`, sleeve `btc`.
-Carry `avg_cost` and `invested_inr` over from `previous_manual.BTC` (the cost only changes if the
-quantity does).
-
-**Do not ask about fixed deposits or Splitwise.** Both are standing rows the API snapshots itself. If
-the user volunteers a change, use `POST/PUT /api/v1/fixed-deposits` or
-`PUT /api/v1/splitwise/{person}` — positive means they owe him — and then continue.
+Then `price = value / qty`, sleeve `btc`, symbol `BTC`. Carry `avg_cost` and `invested_inr` over from the
+previous checkpoint (the cost only changes if the quantity does).
 
 ---
 
-## 5. POST the checkpoint
+## 5. Write the checkpoint
 
-```bash
-curl -X POST localhost:8080/api/v1/checkpoints \
-  -H "Authorization: Bearer $FINGOD_API_TOKEN" -H 'Content-Type: application/json' -d @payload.json
-```
+Write `data/checkpoints/<YYYY-MM-DD>.json` as in `docs/DATA-FORMAT.md`:
 
 ```jsonc
-{ "as_of_date": "YYYY-MM-DD",
-  "usd_inr": "<from INDmoney>",
+{ "as_of_date": "YYYY-MM-DD", "usd_inr": 90.12,
   "sources": {"wallet":"ok","kite":"ok","indmoney":"ok","manual":"ok"},
-  "holdings":  [ {"sleeve":"…","symbol":"…","isin":"…","name":"…",
-                  "qty":"…","price":"…","currency":"INR","fx_rate":"1"} ],
-  "balances":  [ {"kind":"cash|credit_card|epf","ref":"…","amount_inr":"…"} ],
-  "wallet_accounts": [ {"id":"…","name":"…","account_type":"…"} ] }
+  "holdings": [ {"sleeve":"…","symbol":"…","isin":"…","name":"…","qty":0,"price":0,"currency":"INR","fx_rate":1} ],
+  "balances": [ {"kind":"cash|credit_card|epf","ref":"…","amount_inr":0} ] }
 ```
 
-Send **`qty` and `price`; never compute `value_inr` yourself.** The API computes it in Postgres
-NUMERIC as `round(qty × price × fx_rate, 2)`. You may include the source's own total — it is
-cross-checked and any disagreement over ₹1 comes back in `warnings`, which is a useful signal that a
-mapping is wrong.
-
-Responses: **201** new, **200** replaced, **409** an unclassified account (nothing was written —
-fix per §2a and re-post), **400** a bad payload with the offending field named.
+- **Merge, don't overwrite.** If the file exists, read it, replace the sleeves and balances **you** own
+  with fresh ones, and keep the rest. Dropping a sleeve you did not touch is a bug.
+- **Send `qty` and `price`; never compute `value_inr` yourself.** You may include the source's own total
+  as `value_inr`: the app cross-checks it and flags a disagreement over ₹1, which is a useful signal
+  that a mapping is wrong.
+- **Validate before you finish:** `python3 -m json.tool < data/checkpoints/<date>.json`. The app also
+  rejects a bad file by name, but you can catch it first.
 
 ### If a source fails
 
-Write the checkpoint anyway. Carry that sleeve's holdings forward verbatim from the last checkpoint
-and set `sources.<name>: "stale"`. A stale sleeve is excluded from that period's attribution rather
-than booked as a move to zero — the series must never read as a crash. Tell the user plainly which
-source was stale and why.
+Write the checkpoint anyway. Carry that sleeve's holdings forward verbatim from the last checkpoint and
+set `sources.<name>: "stale"`. A stale sleeve is excluded from that period's attribution rather than
+booked as a move to zero — the series must never read as a crash. Tell the user plainly which source
+was stale and why.
 
 ---
 
-## 6. Verify, then report
+## 6. Sales are detected by the app
 
-```bash
-curl -s -H "Authorization: Bearer $FINGOD_API_TOKEN" localhost:8080/api/v1/checkpoints/<date>
-```
+Neither source will tell you what was sold: Kite's `get_trades`, `get_orders` and `get_positions` are
+**today only**, and INDmoney has no transactions endpoint. So the app detects a sale as a quantity that
+fell between two checkpoints and lists it on the **Realised** tab, where the user confirms the real sale
+price. There is nothing for you to POST. Mention it if a position's quantity fell.
 
-Sanity checks worth doing every time:
+> **Two blind spots, and they are structural.** A stock bought *and* sold between two checkpoints is
+> invisible. And a week where the user both sold 300 and bought 100 of the same stock nets to a
+> 200-share disposal. Weekly resolution is weekly resolution; if a trade matters and happened inside the
+> week, the user has to say so.
 
-- Sleeve totals in the right order of magnitude against last checkpoint. A sleeve that halved is
-  either a real event or a mapping bug — find out which before reporting it as news.
-- Any `warnings` in the POST response.
-- No symbol in both `in_equity` and `us_equity`.
+---
+
+## 7. Verify, then report
+
+Read the file back and sanity-check it:
+
+- Sleeve totals (`Σ qty × price × fx`) in the right order of magnitude against the last checkpoint. A
+  sleeve that halved is either a real event or a mapping bug — find out which before reporting it.
 - Holding count roughly stable. A drop of ten is a paging bug, not ten sales.
+- No symbol in both `in_equity` and `us_equity`.
 
-Then tell the user: both net worth figures, what moved since last checkpoint **split into market /
-flow / fx**, anything stale, and anything flagged. The split is the point — "up ₹40,000" is not an
-answer, "₹12,000 of gain and ₹28,000 of money you added" is.
+Then tell the user: net worth (open the app for the exact figures), what moved since the last
+checkpoint **split into market / flow / fx**, anything stale, and anything flagged. The split is the
+point — "up ₹40,000" is not an answer, "₹12,000 of gain and ₹28,000 of money you added" is. Per
+holding, between the previous checkpoint `p` and this one `n`:
+
+```
+market =  qty_p × (price_n − price_p) × fx_n
+flow   = (qty_n − qty_p) × price_n   × fx_n
+fx     =  qty_p ×  price_p × (fx_n − fx_p)        # 0 for INR holdings
+```
 
 ### Price watch — always include it in the report
 
-Two things the owner wants to hear about on every refresh, whatever the checkpoint itself showed.
+Two things the user wants to hear about on every refresh, whatever the checkpoint itself showed.
 Read-only, via INDmoney. `entity_stats` carries `52week_high` and `52week_low` for both US and
 Indian instruments, so there is no need to pull candles.
 
