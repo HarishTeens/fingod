@@ -70,7 +70,7 @@ export function render(el, { onData }) {
     const status = el.querySelector('[data-status]'), errs = el.querySelector('[data-errs]')
     if (!status) return
     const cp = latestCheckpoint()
-    if (!r.available) status.innerHTML = '<span class="spin"></span><span>This page needs a local server to see <code>data/</code>: from the repo folder run <code>python3 -m http.server 8000 --bind 127.0.0.1</code> and open <code>http://localhost:8000</code>.</span>'
+    if (!r.available) status.innerHTML = '<span class="spin"></span><span>This page needs a local server to see <code>data/</code>: from the repo folder run <code>python3 -m http.server 8000 --bind 127.0.0.1</code> and open <code>http://localhost:8000</code> (or another port of your choice).</span>'
     else if (cp) { status.classList.add('ok'); status.innerHTML = `<span class="tickmark">✓</span><span>Received a checkpoint as of ${esc(cp.as_of_date)}.</span>` }
     const bad = inboxFailures()
     errs.innerHTML = bad.length ? `<div class="errs"><b>${bad.length} file${bad.length > 1 ? 's' : ''} in data/ couldn't be imported</b>${bad.map((b) => `<div><code>${esc(b.path)}</code> ${esc(b.error)}</div>`).join('')}<div class="muted">Fix the named field and it imports on its own.</div></div>` : ''

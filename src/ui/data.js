@@ -31,7 +31,7 @@ export function render(el) {
       </tbody></table></section>
 
     <section class="card"><header><h2>Import files</h2></header>
-      <p class="hero-secondary" style="margin-top:0">Files in <code>data/</code> import by themselves while the app is served from a local server (<code>python3 -m http.server 8000 --bind 127.0.0.1</code>). You can also import by hand: a checkpoint or transactions JSON from your agent, or a backup you exported.</p>
+      <p class="hero-secondary" style="margin-top:0">Files in <code>data/</code> import by themselves while the app is served from a local server (<code>python3 -m http.server ${location.port || 8000} --bind 127.0.0.1</code>). You can also import by hand: a checkpoint or transactions JSON from your agent, or a backup you exported.</p>
       <div class="actions"><button class="btn" data-sync>Sync now</button><button class="btn" data-pick>Choose files…</button><input type="file" multiple accept=".json,.sqlite,.db" hidden data-file></div>
       <pre class="log" data-log>${esc(log)}</pre>${inboxFailures().length ? '<p class="note" style="color:var(--critical)">These files are in data/ but were not imported. Fix the named field and it imports on the next sync.</p>' : ''}</section>
 
@@ -49,7 +49,7 @@ export function render(el) {
     const c = e.target.closest('[data-copy]'); if (c) copy(el.querySelector(`#${c.dataset.copy}`).textContent, c)
     if (e.target.closest('[data-sync]')) {
       const r = await syncInbox()
-      logTo(!r.available ? 'The app is not being served by a local server, so it cannot see data/. From the repo folder run: python3 -m http.server 8000 --bind 127.0.0.1, then open http://localhost:8000' : `${r.imported.length} file(s) imported, ${r.errors.length} error(s), ${r.total} in data/.\n${r.imported.map((i) => `✓ ${i.path}`).join('\n')}${r.errors.map((x) => `\n✗ ${x.path}: ${x.error}`).join('')}`)
+      logTo(!r.available ? 'The app is not being served by a local server, so it cannot see data/. From the repo folder run: python3 -m http.server 8000 --bind 127.0.0.1, then open http://localhost:8000 (or another port of your choice)' : `${r.imported.length} file(s) imported, ${r.errors.length} error(s), ${r.total} in data/.\n${r.imported.map((i) => `✓ ${i.path}`).join('\n')}${r.errors.map((x) => `\n✗ ${x.path}: ${x.error}`).join('')}`)
     }
     if (e.target.closest('[data-pick]')) el.querySelector('[data-file]').click()
     if (e.target.closest('[data-export]')) {

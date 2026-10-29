@@ -29,7 +29,7 @@ function networthCard(series) {
   const pts = (k) => series.map((n) => [Date.parse(n.as_of_date), n[k]])
   const chart = lineChart({
     series: [{ label: 'Total', color: 'var(--ink)', points: pts('total'), endLabel: compact(series.at(-1).total) }, { label: 'Liquid', color: 'var(--sleeve-in_equity)', points: pts('liquid'), endLabel: compact(series.at(-1).liquid) }],
-    yFormat: compact, xFormat: (ms) => shortDate(new Date(ms).toISOString().slice(0, 10)), zeroBased: true, height: 380, title: 'Net worth over time',
+    yFormat: compact, xFormat: (ms) => shortDate(new Date(ms).toISOString().slice(0, 10)), zeroBased: true, height: 560, title: 'Net worth over time',
   })
   return `<section class="card"><header><h2>Net worth</h2></header>${chart}
     <div class="legend"><span><i class="swatch" style="background:var(--ink)"></i>Total</span><span><i class="swatch" style="background:var(--sleeve-in_equity)"></i>Liquid</span></div>
@@ -77,7 +77,7 @@ export function render(el) {
   const series = networthSeries()
   const a = allocationNow()
   el.innerHTML = `<div class="grid" style="gap:16px">${hero(series)}${salesBanner()}
-    <div class="grid cols-3" style="align-items:start">${networthCard(series)}${allocationCard(a)}</div>${spendCard()}${rebalanceCard(a)}</div>`
+    <div class="grid cols-3">${networthCard(series)}${allocationCard(a)}</div>${spendCard()}${rebalanceCard(a)}</div>`
   el.querySelector('svg [data-label]')?.closest('section') // (bars carry data-period/data-label for the Expenses drill-down)
   el.addEventListener('click', (e) => {
     const bar = e.target.closest('rect[data-period]')

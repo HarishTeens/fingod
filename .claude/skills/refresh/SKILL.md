@@ -13,6 +13,10 @@ values looking plausible.
 
 The file formats are in `docs/DATA-FORMAT.md`. Read it before writing anything.
 
+Tool names below are written the way Claude Code shows them (`mcp__kite__get_holdings`). In Codex or Gemini CLI the
+same tools appear under that agent's own naming: match them by the function name after the last `__`
+(`get_holdings`, `get_mf_holdings`, `networth_holdings`, `get_accounts`, `get_records`).
+
 Weekly, or whenever asked. **It never polls.**
 
 > ## Read-only. Never place, modify or cancel an order.
@@ -28,7 +32,7 @@ Weekly, or whenever asked. **It never polls.**
 0. **The update step: bring fingod up to the latest `main` first.** (Other files call this "the update step".)
    The routine and the app improve over time, so every checkpoint starts here. Only ever pull from this
    checkout's own `origin`. Decide in this order:
-   1. `git fetch origin main`, then `git rev-list --count HEAD..origin/main`. **`0` means up to date: say
+   1. `git fetch -q origin main`, then `git rev-list --count HEAD..origin/main`. **`0` means up to date: say
       nothing and move on to item 1.**
    2. Behind, so check `git status --porcelain --untracked-files=no`. **Any output means local edits to
       tracked files: do not pull.** Tell the user there are local changes and carry on with what you have.

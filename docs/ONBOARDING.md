@@ -20,6 +20,9 @@ make it **selectable**, and let the user **submit** a whole round at once.
 - **No such tool?** (Codex and Gemini have no equivalent.) Fake it plainly: print the same questions as numbered
   lists, one round at a time, and let the user answer with numbers ("1,3", "all", "none"). Same questions, same
   order.
+- **Header limit:** the tool's headers are at most **12 characters** (`Apps`, `By hand`, `Targets` fit). A question
+  whose options depend on an earlier answer (like "Add another deposit?" or the review) goes in a **later call**,
+  never the same batch.
 - **Numbers and free text are typed, not selected.** Ask for all the fields of one item in **a single message**
   with an example ("Bitcoin: quantity, current value in ₹, and what you paid (optional). e.g. `0.0125, 106000,
   80000`"), never one field per message.
@@ -122,7 +125,9 @@ formats. The MCP servers are declared per agent, and the three configs list the 
 **If a source's tools aren't available**, don't improvise. Tell the user exactly this: quit, then
 `cd <repo folder>` and start the agent there (`claude`, `codex` or `gemini`; for Wallet, first
 `export WALLET_MCP_TOKEN=<the whole token>`), approve or trust the project's MCP config, and run the setup
-again. A session only loads a project's MCP servers when it starts inside that folder.
+again. A session only loads a project's MCP servers when it starts inside that folder. **A Wallet connection that
+fails with HTTP 401 and "invalid JWT format" almost always means the token was truncated** when it was copied:
+have the user generate and export it again, taking the whole string.
 
 Connect the chosen apps **one at a time**. Before each one that needs a login, ask a selectable question
 (*"Ready to connect Zerodha Kite? You'll get a single-use login link."* → *Connect now (Recommended)* / *Skip for
@@ -131,8 +136,9 @@ now*), so they are at the keyboard when the link appears. Then:
 - **Wallet.** The user generates an access token in the Wallet app (Settings, MCP) and exports it as
   `WALLET_MCP_TOKEN` before starting the agent. Never ask them to paste it into a file. Follow SKILL.md §2:
   read the accounts, then **ask what each one is** with selectable questions, batched up to 4 accounts per call:
-  *"What is 'Salary account'?"* → *Cash* / *Credit card* / *Ignore (e.g. a fixed deposit)*. Suggest the likely
-  answer from the name and type, but never guess silently: a fixed deposit looks like a salary account. Remember
+  *"What is 'Salary account'?"* → *Cash* / *Credit card* / *Ignore (e.g. a fixed deposit)*. Put your best guess
+  from the name and type **first and label it "(Recommended)"**, but the user decides, and never guess silently: a
+  fixed deposit looks like a salary account. Remember
   the answers in `data/config.json`, then page the records and write `data/transactions/wallet-<today>.json`.
 - **Zerodha Kite.** Call `get_profile`; if it says to log in, call `login` and show the link **with the risk
   warning the tool returns**. Then follow SKILL.md §1.
