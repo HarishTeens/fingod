@@ -3,10 +3,22 @@
     "allow": [
       "Bash(python3 -m http.server:*)",
       "Bash(python3 serve.py:*)",
+      "Bash(python3 --version)",
+      "Bash(python3 -m json.tool:*)",
+      "Bash(node -v)",
+      "Bash(node --test:*)",
+      "Bash(command -v:*)",
       "Bash(open http://localhost:*)",
       "Bash(xdg-open http://localhost:*)",
-      "Bash(python3 -m json.tool:*)",
-      "Bash(node --test:*)"
+      "Bash(curl -s localhost:*)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' localhost:*)",
+      "Bash(jq:*)",
+      "Bash(git fetch -q origin main)",
+      "Bash(git rev-list --count HEAD..origin/main)",
+      "Bash(git status --porcelain --untracked-files=no)",
+      "Bash(git log --oneline HEAD..origin/main)",
+      "Bash(git diff --stat HEAD..origin/main)",
+      "Bash(git pull --ff-only origin main)"
     ],
     "deny": [
       "mcp__kite__place_order",
