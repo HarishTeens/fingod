@@ -78,10 +78,9 @@ Kite was ahead on the same mutual funds (INDmoney's feed lags SIP instalments) a
 missing stock outright. See `docs/MCP-SHAPES.md`. Do not supplement either sleeve from INDmoney.
 
 Call `mcp__kite__get_profile` first. If it returns "Please log in first", call `mcp__kite__login`,
-show the user the warning the tool tells you to show, then **open the link in their browser for them** (see
-`docs/ONBOARDING.md` §5: only if it is `https://mcp.kite.trade/…`, with the URL quoted; also print it as a
-Markdown link `[Login to Kite](<url>)`), and wait for them to say they are logged in. The link is single-use and
-dies on an `/mcp reconnect`, so mint it immediately before opening it.
+show the user the warning the tool tells you to show, then **show the link clickably**: as a Markdown link
+`[Login to Kite](<url>)` plus the full URL on its own line (see `docs/ONBOARDING.md` §5), and wait for them to say
+they are logged in. The link is single-use and dies on an `/mcp reconnect`, so mint it immediately before opening it.
 
 ### `get_holdings` → `in_equity`, `gold`, `debt`
 

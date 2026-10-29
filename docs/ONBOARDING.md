@@ -130,14 +130,12 @@ now*), so they are at the keyboard when the link appears. Then:
   fixed deposit looks like a salary account. Remember
   the answers in `data/config.json`, then page the records and write `data/transactions/wallet-<today>.json`.
 - **Zerodha Kite.** Call `get_profile`; if it says to log in, call `login`. It returns a single-use link and a risk
-  warning. **Show the warning** the tool tells you to show, then **open the link in the user's browser for them**
-  instead of making them copy it:
-  - Only if the link is `https://mcp.kite.trade/…`. If the host is anything else, don't open it: show it and say why.
-  - `open "<url>"` (macOS), `xdg-open "<url>"` (Linux) or `start "" "<url>"` (Windows). **Quote the URL**: it contains
-    `?`. If your permissions prompt for this, that is expected; it is a single command.
-  - Also print it as a Markdown link, `[Login to Kite](<url>)`, so it is clickable in terminals that support
-    hyperlinks, and say that you opened it. If nothing could open it, print the whole URL on its own line.
-  - Mint the link right before opening it: it is single-use and dies if the MCP connection is reset.
+  warning. **Show the warning** the tool tells you to show, then **show the link in a clickable form**:
+  - Print it as a Markdown link, `[Login to Kite](<url>)`, so it is clickable in terminals that support hyperlinks.
+  - Also print the whole URL on **its own line** (not inside a sentence or brackets), so terminals that auto-detect
+    URLs can click it and it can be copied cleanly if they can't.
+  - Don't open it yourself; the user clicks it.
+  - Mint the link right before showing it: it is single-use and dies if the MCP connection is reset.
   - Then wait for them to say they have logged in, and follow SKILL.md §1.
 - **INDmoney.** OAuth in the browser (mobile number, OTP, MPIN). Then SKILL.md §3 for US holdings, EPF (if chosen)
   and USD wallet cash.
