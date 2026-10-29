@@ -134,13 +134,9 @@
   <p class="cap">Dashboard: liquid and total net worth, allocation, and monthly spend by label.</p>
   <div class="shots">
     <div><div class="shot"><img src="shots/inv.png" width="2400" height="2760" alt="Every sleeve indexed to 100, with market, flow and FX split" loading="lazy"></div><p class="cap">Investments: every asset on one axis, with each change split into market, flow and FX.</p></div>
-    <div><div class="term" role="img" aria-label="An illustrative terminal session: the agent serves the app, opens the browser, asks which accounts you use and connects them">
+    <div><div class="term" role="img" aria-label="An illustrative terminal session: the agent asks which accounts you use, connects them, then opens your dashboard">
   <div class="term-bar"><span></span><span></span><span></span><em>fingod — claude</em></div>
 <pre><span class="u">&gt; Set up fingod for me, a local-first net worth tracker…</span>
-
-<span class="a">●</span> Reading docs/ONBOARDING.md. Starting the app and opening it.
-  <span class="d">python3 -m http.server 8000 --bind 127.0.0.1</span>  <span class="ok">✓ serving</span>
-  <span class="d">open http://localhost:8000</span>                   <span class="ok">✓ opened</span>
 
 <span class="a">●</span> Which of these apps do you use?  <span class="d">(select, then submit)</span>
   <span class="ok">◉</span> Wallet        <span class="d">expenses, cash, credit cards</span>
@@ -148,11 +144,11 @@
   <span class="ok">◉</span> INDmoney      <span class="d">US stocks</span>
   <span class="d">◯</span> EPF           <span class="d">via INDmoney</span>
 
-<span class="a">●</span> Connecting Kite. Open this login link and note the risk
-  warning it shows. It is single-use. <span class="d">Read-only: no orders.</span>
+<span class="a">●</span> Connecting Kite. Opening the login link in your
+  browser. <span class="d">Read-only: no orders.</span>
 
-<span class="a">●</span> Wrote data/checkpoints/2026-10-29.json. Your dashboard
-  is open at localhost:8000.</pre></div>
+<span class="a">●</span> Wrote data/checkpoints/2026-10-29.json. Opening your
+  dashboard.  <span class="d">open http://localhost:8000</span>  <span class="ok">✓ opened</span></pre></div>
   <p class="cap">Setup happens in your terminal: pick options, submit, and your agent connects and writes your data. (Illustrative session.)</p></div>
   </div>
   <div class="trio">
@@ -168,8 +164,8 @@
   <p class="sub">fingod can't log in to your accounts from a web page, and it shouldn't. Your assistant does that on your machine and hands the app plain files.</p>
   <div class="steps">
     <div class="step"><span class="n">01</span><div class="where">In a terminal</div><p>Clone the repo and start your assistant inside it. One command.</p></div>
-    <div class="step"><span class="n">02</span><div class="where">Paste the prompt</div><p>Your agent serves the app, opens it in your browser, and asks which accounts you use with selectable options, right there in the terminal.</p></div>
-    <div class="step"><span class="n">03</span><div class="where">Follow along</div><p>Pick your options, submit, and log in when asked. Your dashboard fills in as the data arrives.</p></div>
+    <div class="step"><span class="n">02</span><div class="where">Paste the prompt</div><p>Your agent asks which accounts you use with selectable options, right there in the terminal.</p></div>
+    <div class="step"><span class="n">03</span><div class="where">Follow along</div><p>Pick your options, submit, and log in when asked. Your dashboard opens in your browser once everything is connected.</p></div>
   </div>
   <div class="card">
     <h3>Set up fingod</h3>

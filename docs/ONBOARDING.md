@@ -2,7 +2,7 @@
 
 This is the script for setting fingod up with a new user. **You are their coding agent** (Claude Code,
 Codex CLI, Gemini CLI or similar) and this happens in their terminal. The browser only shows the result; it
-does not guide anything.
+does not guide anything, and **you open it once, at the very end** (§7), when there is data to show.
 
 > **Read-only.** Never place, modify or cancel an order. Kite's MCP server exposes order and GTT tools;
 > fingod never calls them (they are also disabled in this repo's MCP config). Never write a token into any
@@ -30,28 +30,17 @@ make it **selectable**, and let the user **submit** a whole round at once.
 
 ---
 
-## 1. Get the app running
+## 1. Check the tools
 
 1. **Are you in the repo?** If this folder isn't the fingod repo, clone
    `https://github.com/HarishTeens/fingod.git` and work from inside it.
 2. **Check the tools.** `python3 --version` (3.8+) and `node -v`. Node is only needed for the Kite connector,
    which needs **20.18.1 or newer**. If it is older and the user wants Kite, tell them to run `nvm install`
    inside the folder (`.nvmrc` pins 22), then restart this session from that shell.
-3. **Serve it.** From the repo folder, in the background, run Python's built-in server (the standard
-   library, so nothing from the repo is executed):
 
-   ```bash
-   python3 -m http.server 8000 --bind 127.0.0.1
-   ```
-
-   If port 8000 is busy, pick another, and **remember it**: every later mention of `8000` or `<port>` in this
-   guide and in `SKILL.md` means the port you chose. **Confirm your server is the one answering**:
-   `curl -s -o /dev/null -w '%{http_code}' localhost:<port>/src/main.js` must print `200`. A leftover server
-   from an earlier run can hold the port, and a failed start is easy to miss.
-4. **Open it** in the user's browser: `open http://localhost:<port>` (macOS), `xdg-open …` (Linux) or
-   `start …` (Windows). If none of those exist (a headless or remote machine), give the user the URL to open
-   themselves. They will see "No data yet". Tell them to leave the tab open: it fills in on its own as you
-   write files.
+**Do not start the app or open a browser yet.** The browser only shows the result, so opening it now leaves the
+user looking at an empty page while they answer questions, and they have to come back later. You open it once, at
+the end, when their dashboard is ready.
 
 ## 2. Round 1: what do you use?
 
@@ -140,8 +129,16 @@ now*), so they are at the keyboard when the link appears. Then:
   from the name and type **first and label it "(Recommended)"**, but the user decides, and never guess silently: a
   fixed deposit looks like a salary account. Remember
   the answers in `data/config.json`, then page the records and write `data/transactions/wallet-<today>.json`.
-- **Zerodha Kite.** Call `get_profile`; if it says to log in, call `login` and show the link **with the risk
-  warning the tool returns**. Then follow SKILL.md §1.
+- **Zerodha Kite.** Call `get_profile`; if it says to log in, call `login`. It returns a single-use link and a risk
+  warning. **Show the warning** the tool tells you to show, then **open the link in the user's browser for them**
+  instead of making them copy it:
+  - Only if the link is `https://mcp.kite.trade/…`. If the host is anything else, don't open it: show it and say why.
+  - `open "<url>"` (macOS), `xdg-open "<url>"` (Linux) or `start "" "<url>"` (Windows). **Quote the URL**: it contains
+    `?`. If your permissions prompt for this, that is expected; it is a single command.
+  - Also print it as a Markdown link, `[Login to Kite](<url>)`, so it is clickable in terminals that support
+    hyperlinks, and say that you opened it. If nothing could open it, print the whole URL on its own line.
+  - Mint the link right before opening it: it is single-use and dies if the MCP connection is reset.
+  - Then wait for them to say they have logged in, and follow SKILL.md §1.
 - **INDmoney.** OAuth in the browser (mobile number, OTP, MPIN). Then SKILL.md §3 for US holdings, EPF (if chosen)
   and USD wallet cash.
 
@@ -173,12 +170,27 @@ out (as above) unless the user wants EPF counted in the rebalance, since it can'
 Always merge into an existing `data/standing/manual.json` rather than overwriting it: replace fixed deposits by
 `(bank, principal, start_date)` and people by name, and keep the rest.
 
-## 7. Check it worked
+## 7. Check it, then show them the dashboard
 
-1. Every file you wrote parses: `python3 -m json.tool < <file>`.
-2. The dashboard shows up in the open tab within a few seconds. If the user sees a red "couldn't be imported"
-   link in the top bar, open **Data** in the app: it names the file and the field. Fix and re-write the file.
-3. Sanity-check what you wrote against SKILL.md §7 (holding counts, sleeve totals, no symbol in two sleeves).
+This is the first time the user sees the app, and it already shows their data.
+
+1. **Check the files.** Every file you wrote parses: `python3 -m json.tool < <file>`. Sanity-check them against
+   SKILL.md §7 (holding counts, sleeve totals, no symbol in two sleeves).
+2. **Serve it.** From the repo folder, in the background, run Python's built-in server (the standard library, so
+   nothing from the repo is executed):
+
+   ```bash
+   python3 -m http.server 8000 --bind 127.0.0.1
+   ```
+
+   If port 8000 is busy, pick another, and **remember it**: every later mention of `8000` or `<port>` in this guide
+   and in `SKILL.md` means the port you chose. **Confirm your server is the one answering**:
+   `curl -s -o /dev/null -w '%{http_code}' localhost:<port>/src/main.js` must print `200`. A leftover server from an
+   earlier run can hold the port, and a failed start is easy to miss.
+3. **Open it** in the user's browser: `open http://localhost:<port>` (macOS), `xdg-open …` (Linux) or `start …`
+   (Windows). If none of those exist (a headless or remote machine), give the user the URL to open themselves.
+4. **Check it imported.** The dashboard appears within a few seconds. If the user sees a red "couldn't be imported"
+   link in the top bar, open **Data** in the app: it names the file and every field. Fix and re-write the file.
 
 ## 8. Wrap up
 

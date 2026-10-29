@@ -32,14 +32,15 @@ coding assistant with shell access and MCP support:
 Set up fingod for me, a local-first net worth tracker that runs in my browser.
 
 1. If this repo isn't already your working folder, clone https://github.com/HarishTeens/fingod and work from there.
-2. Read docs/ONBOARDING.md and follow it step by step. It covers serving the app and opening it in my browser, finding out which accounts I use, connecting them, and writing my data into data/.
+2. Read docs/ONBOARDING.md and follow it step by step. It covers finding out which accounts I use, connecting them, writing my data into data/, and, only once all that is done, opening my dashboard in my browser.
 3. Run it in this terminal as a short form: use your multiple-choice question tool for every choice (selectable options, then a submit step), and plain questions only for numbers and text.
 
 Rules: read-only. Never place, modify or cancel an order. Never commit anything from data/. Ask me before anything that depends on my preferences.
 ```
 
-The same prompt lives in [PROMPT.md](PROMPT.md). Your agent follows [docs/ONBOARDING.md](docs/ONBOARDING.md): it serves the app, opens it in
-your browser, asks which accounts you use, connects them and writes your data, all as a short form in your terminal: selectable options, then a submit step.
+The same prompt lives in [PROMPT.md](PROMPT.md). Your agent follows [docs/ONBOARDING.md](docs/ONBOARDING.md): it asks which accounts you use,
+connects them and writes your data, all as a short form in your terminal (selectable options, then a submit step), and
+only then opens your dashboard in your browser.
 The browser just shows the result, and fills in on its own. (Pasting the prompt into a session that started somewhere
 else also works: it clones the repo and tells you to restart inside the folder before it connects anything.)
 
