@@ -8,6 +8,7 @@ server and no build step.
 Your coding agent (Claude Code, etc.)
    ├─ Wallet MCP      → expense transactions, cash, credit cards
    ├─ Kite MCP        → Indian equity, Indian mutual funds
+   ├─ Groww MCP       → Indian equity (a second broker)
    ├─ INDmoney MCP    → US equity, EPF
    └─ asks you        → Bitcoin
         └──► writes JSON into data/  ──►  a local server lists it  ──►  the browser imports it into SQLite
@@ -77,7 +78,7 @@ Each holding belongs to exactly one sleeve:
 
 | Sleeve | What | Owned by |
 |---|---|---|
-| `in_equity` | Indian stocks and ETFs | Kite |
+| `in_equity` | Indian stocks and ETFs | Kite, and Groww (merged by ISIN) |
 | `in_mf` | Indian mutual funds | Kite |
 | `us_equity` | US stocks | INDmoney |
 | `gold` | Gold ETFs | Kite (classified by ISIN) |
@@ -93,6 +94,7 @@ overlap rather than reconciling it:
 ```
 Wallet    → expenses, cash, credit cards      (its FD accounts are excluded)
 Kite      → Indian equity, Indian mutual funds, idle broker cash
+Groww     → Indian equity held at Groww (merged with Kite by ISIN; mutual funds not supported yet)
 INDmoney  → US equity, EPF, US wallet cash    (everything else discarded)
 Manual    → Bitcoin, fixed deposits, Splitwise
 ```

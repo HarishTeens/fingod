@@ -1,6 +1,6 @@
 ---
 name: refresh
-description: Take a fingod checkpoint — read Wallet, Zerodha Kite and INDmoney over MCP, ask for the figures no server can supply, and write JSON files into data/ for the app to import. Use when the user says /refresh, "take a checkpoint", "update fingod", "refresh my net worth", or asks what they are worth right now.
+description: Take a fingod checkpoint — read Wallet, Zerodha Kite, Groww and INDmoney over MCP, ask for the figures no server can supply, and write JSON files into data/ for the app to import. Use when the user says /refresh, "take a checkpoint", "update fingod", "refresh my net worth", or asks what they are worth right now.
 ---
 
 # /refresh — take a checkpoint
@@ -73,14 +73,15 @@ them on every checkpoint. If the user volunteers a change, make it: update `data
 
 ## 1. Kite — Indian equity and mutual funds
 
-Zerodha owns **both** Indian sleeves. This was settled by reconciling against INDmoney row by row:
-Kite was ahead on the same mutual funds (INDmoney's feed lags SIP instalments) and INDmoney was
-missing stock outright. See `docs/MCP-SHAPES.md`. Do not supplement either sleeve from INDmoney.
+Zerodha owns **both** Indian sleeves *for what is held at Zerodha*. This was settled by reconciling against
+INDmoney row by row: Kite was ahead on the same mutual funds (INDmoney's feed lags SIP instalments) and INDmoney
+was missing stock outright. See `docs/MCP-SHAPES.md`. Do not supplement either sleeve from INDmoney. A user can
+also hold Indian stocks at **Groww** (§1b): that is a second broker, merged by ISIN, not a reconciliation.
 
 Call `mcp__kite__get_profile` first. If it returns "Please log in first", call `mcp__kite__login`,
 show the user the warning the tool tells you to show, then **show the link clickably**: as a Markdown link
 `[Login to Kite](<url>)` plus the full URL on its own line (see `docs/ONBOARDING.md` §5), and wait for them to say
-they are logged in. The link is single-use and dies on an `/mcp reconnect`, so mint it immediately before opening it.
+they are logged in. The link is single-use and dies on an `/mcp reconnect`, so mint it immediately before showing it.
 
 ### `get_holdings` → `in_equity`, `gold`, `debt`
 
@@ -113,6 +114,52 @@ INF732E01037  (LIQUIDBEES)  → debt
 
 `equity.available.cash` → a `cash` balance with `ref: "Zerodha equity"`. Usually tiny, but Wallet
 cannot see it.
+
+---
+
+## 1b. Groww — Indian stocks (a second broker)
+
+Groww runs an official hosted MCP server (`groww` in the agent's project config, `https://mcp.groww.in/mcp`). It
+covers **stocks and F&O only**; Groww has said mutual funds, IPOs and bonds will follow, so for now Groww mutual
+funds are not read.
+
+> **This integration was written from Groww's public documentation and has not been run against a real Groww
+> account.** Its tool names and response fields are not published, so **do not assume them: inspect first.** If
+> anything below doesn't match what the server really returns, trust the server, say so to the user, and carry on
+> with what is clear.
+
+> **Groww's server can place orders** (buy, limit, stop-loss, and sells with DDPI). Their names are not published,
+> so unlike Kite's they cannot be blocked in advance. **Never call a tool that places, modifies or cancels an
+> order, or that you cannot clearly tell is read-only.** Use only tools whose names and descriptions say they read
+> holdings, positions or the profile.
+
+1. **Sign in.** The first tool call starts a browser sign-in (OAuth). Show the user the link clickably, as for Kite
+   (§1), and wait for them to say they are done. Codex: `codex mcp login groww`. Gemini: `/mcp auth groww`. If Claude
+   Code's native sign-in can't complete, the documented fallback is the bridge
+   `npx -y mcp-remote https://mcp.groww.in/mcp 52155` (needs Node 20.18.1+); tell the user rather than editing config.
+2. **List the server's tools** and classify each as *read* or *order* from its name and description. Tell the user
+   which tools you will use. **Then tell them which are order tools and that they should block them** with a
+   permission rule (you cannot edit the user's permission settings yourself):
+   - Claude Code: add each to `permissions.deny` in `.claude/settings.json` as `mcp__groww__<tool>`;
+   - Codex: add them to `disabled_tools` under `[mcp_servers.groww]` in `.codex/config.toml`;
+   - Gemini: add them to `excludeTools` under `groww` in `.gemini/settings.json`.
+3. **Read the holdings tool** (something like holdings or portfolio). Map each stock to a holding in sleeve
+   `in_equity` (or `gold` / `debt` for the ISINs in §1), `currency: "INR"`:
+   - `symbol` from the trading symbol or name field;
+   - `isin`: **required**, because holdings are matched on ISIN. If the response has none, say so, and use the
+     symbol with no ISIN (a rename would then read as a sale) rather than guessing one;
+   - `qty` from the quantity field (add any pending / T+1 quantity, as for Kite);
+   - `price` from the last / current price per unit (never a total); `avg_cost` from the average buy price, and
+     `invested_inr = round(qty × avg_cost, 2)`; leave both out if the response has no cost.
+4. **Ignore** F&O positions and anything that is not a delivery holding, and tell the user you did.
+5. **Merge with Kite by ISIN.** If the same ISIN is held at both brokers, write **one** holding with the quantities
+   **added**, `invested_inr` added, and `avg_cost = invested_inr / qty`. Record where it came from so a failed
+   broker can be carried forward later: `"brokers": {"kite": {"qty": 10, "invested_inr": 4000}, "groww":
+   {"qty": 5, "invested_inr": 2100}}` (the app ignores this field; this routine reads it). A holding at one broker
+   can carry a one-entry `brokers` map too.
+6. Set `sources.groww` to `"ok"` or `"stale"`. If Groww fails but Kite works, carry forward **only Groww's share**:
+   take each holding's `brokers.groww` from the last checkpoint and add it to Kite's fresh quantity, and set
+   `sources.groww: "stale"`. Never write Groww's holdings as zero.
 
 ---
 
@@ -230,7 +277,7 @@ Write `data/checkpoints/<YYYY-MM-DD>.json` as in `docs/DATA-FORMAT.md`:
 
 ```jsonc
 { "as_of_date": "YYYY-MM-DD", "usd_inr": 90.12,
-  "sources": {"wallet":"ok","kite":"ok","indmoney":"ok","manual":"ok"},
+  "sources": {"wallet":"ok","kite":"ok","groww":"ok","indmoney":"ok","manual":"ok"},
   "holdings": [ {"sleeve":"…","symbol":"…","isin":"…","name":"…","qty":0,"price":0,"currency":"INR","fx_rate":1} ],
   "balances": [ {"kind":"cash|credit_card|epf","ref":"…","amount_inr":0} ] }
 ```

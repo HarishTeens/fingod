@@ -128,6 +128,26 @@ into the `gold` and `debt` sleeves. Overnight-rate ETFs are cash parked in the d
 
 ---
 
+## Groww
+
+**Unverified.** This section is written from Groww's public product page, not from a real account. Where it says
+"unknown", the server has not been inspected and the refresh routine must look at what it actually returns.
+
+- **Server:** `https://mcp.groww.in/mcp`, Groww's official hosted MCP. Sign-in is a browser link (OAuth). For clients
+  without native OAuth, Groww documents the bridge `npx … mcp-remote https://mcp.groww.in/mcp 52155`.
+- **Covers:** stocks and F&O (holdings, positions, P&L, market context). **Mutual funds, IPOs and bonds are not
+  supported yet** ("will be added"), so Groww mutual funds are not read.
+- **Can place orders** (buy, limit and stop-loss; sells need DDPI authorisation). The tool names are **unknown**, so
+  fingod cannot pre-block them the way it blocks Kite's six. The refresh routine must list the tools, use only the
+  clearly read-only ones, and tell the user which order tools to deny in their agent's config.
+- **Holdings fields:** unknown. Expect a trading symbol or name, a quantity, an average price and a last price;
+  an ISIN may or may not be present. Map defensively (SKILL.md §1b) and never assume a field exists.
+- **Availability:** Groww describes access as limited and the product as early-stage.
+- **Ownership:** a second broker for Indian stocks. The same ISIN at Zerodha and Groww is merged into one holding with
+  quantities added (`docs/DATA-FORMAT.md`, "One stock at two brokers").
+
+---
+
 ## INDmoney
 
 Authenticates with OAuth 2.1 and PKCE. Every tool returns `{"result": "<json string>"}`, so parse the

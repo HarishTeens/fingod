@@ -52,8 +52,8 @@ One batch of questions, answered together. Ask exactly these (Claude Code: one `
 |---|---|
 | Wallet | Expenses, cash accounts and credit cards (BudgetBakers) |
 | Zerodha Kite | Indian stocks, mutual funds, gold and liquid ETFs |
-| INDmoney | US stocks and your USD wallet |
-| EPF (via INDmoney) | Provident fund balance per employer; rides on the INDmoney connection |
+| Groww | Indian stocks (the official Groww MCP covers stocks and F&O only; mutual funds aren't supported yet) |
+| INDmoney | US stocks and your USD wallet, and EPF |
 
 **Q2. What do you track by hand?** *(multi-select, header "By hand")*
 
@@ -70,14 +70,17 @@ One batch of questions, answered together. Ask exactly these (Claude Code: one `
 | Use the defaults (Recommended) | 27% Indian equity, 35% mutual funds, 10% US, 5% gold, 5% Bitcoin, 15% FDs, 2% debt, 1% cash |
 | I'll set my own | You'll be asked for the percentages next |
 
-Nothing is mandatory: a user with only Bitcoin and one FD still gets a dashboard. If they pick EPF but not INDmoney,
-say that EPF rides on INDmoney and add it for them.
+Nothing is mandatory: a user with only Bitcoin and one FD still gets a dashboard. That is four options, the most a
+question can hold, so EPF is **not** in Q1: if they picked INDmoney, ask about it in Round 2 (below). Someone with
+Indian stocks at both Zerodha and Groww picks both; their holdings are merged by ISIN.
 
 ## 3. Round 2: the details you need to type
 
 Only for what they picked in Q2 and Q3. **One message per item, all its fields together, with an example.**
 Offer to skip any of them.
 
+- **EPF** (only if they picked INDmoney): one selectable question, *"Also pull your EPF balance through INDmoney?"*
+  → *Yes (Recommended)* / *No*. It rides on the same connection. This is a different call from Round 1.
 - **Bitcoin.** Quantity, current total value in rupees, and optionally what they paid in total.
 - **Each fixed deposit.** Bank, principal, rate in %, start date, and maturity date (optional). Then a selectable
   question: *Add another deposit?* Yes / No. Interest is computed, so never ask for it.
@@ -91,7 +94,7 @@ Offer to skip any of them.
 Before connecting anything or writing a file, show a short summary of what you are about to do:
 
 ```
-Connect:   Wallet, Zerodha Kite, INDmoney (+ EPF)
+Connect:   Wallet, Zerodha Kite, Groww, INDmoney (+ EPF)
 By hand:   Bitcoin 0.0125 BTC (₹106,000) · 1 fixed deposit · Splitwise: 2 people
 Targets:   defaults
 ```
@@ -137,6 +140,12 @@ now*), so they are at the keyboard when the link appears. Then:
   - Don't open it yourself; the user clicks it.
   - Mint the link right before showing it: it is single-use and dies if the MCP connection is reset.
   - Then wait for them to say they have logged in, and follow SKILL.md §1.
+- **Groww.** Follow SKILL.md §1b. Two things matter. First, this integration was written from Groww's public docs and
+  **has not been run against a real account**: tell the user it is new, and inspect what the server returns instead
+  of assuming. Second, **Groww's MCP server can place orders and its tool names aren't published**, so list its
+  tools, use only the clearly read-only ones, and tell the user which order tools to block (you cannot edit their
+  permission settings): Claude Code `permissions.deny` as `mcp__groww__<tool>`, Codex `disabled_tools`, Gemini
+  `excludeTools`. Sign-in is the same clickable-link flow as Kite.
 - **INDmoney.** OAuth in the browser (mobile number, OTP, MPIN). Then SKILL.md §3 for US holdings, EPF (if chosen)
   and USD wallet cash.
 

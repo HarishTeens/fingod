@@ -44,7 +44,7 @@ export const RANGE_IDS = Object.keys(RANGES)
 
 // Which source owns which sleeve: a stale source is excluded from that period's
 // attribution rather than booked as a move to zero.
-const SOURCE_OF = { in_equity: 'kite', in_mf: 'kite', gold: 'kite', debt: 'kite', us_equity: 'indmoney', btc: 'manual' }
+const SOURCE_OF = { in_equity: ['kite', 'groww'], in_mf: ['kite'], gold: ['kite', 'groww'], debt: ['kite', 'groww'], us_equity: ['indmoney'], btc: ['manual'] }
 
 /** Sleeve returns and attribution between the latest checkpoint and the one a
  * range ago, plus a series for the indexed chart. */
@@ -69,7 +69,7 @@ export function investmentsView(range = '3m') {
   const r = returns(now, prev)
 
   // Drop attribution for sleeves whose source went stale on either side.
-  const stale = (s) => { const src = SOURCE_OF[s]; return src && (latest.sources[src] === 'stale' || (compared && compared.sources[src] === 'stale')) }
+  const stale = (s) => (SOURCE_OF[s] || []).some((src) => latest.sources[src] === 'stale' || (compared && compared.sources[src] === 'stale'))
   for (const s of r.sleeves) if (stale(s.sleeve)) Object.assign(s, { market: null, flow: null, fx: null, delta: null, stale: true })
 
   const fdSleeve = fds.length ? fixedDepositReturns(fds, latest.as_of_date, compared && compared.as_of_date) : null

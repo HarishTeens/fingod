@@ -2,7 +2,7 @@
 
 **Your net worth, on your own machine.**
 
-fingod connects Wallet, Zerodha, INDmoney and Bitcoin through your coding assistant, then shows what
+fingod connects Wallet, Zerodha, Groww and INDmoney through your coding assistant, then shows what
 actually grew and what you simply added. It runs entirely in your browser: vanilla JavaScript and
 SQLite compiled to WebAssembly. **No backend, no database server, no build step, no account.**
 
@@ -83,6 +83,7 @@ modern browser.
 Your coding agent
    ├─ Wallet MCP      → expense transactions, cash, credit cards
    ├─ Kite MCP        → Indian equity, Indian mutual funds
+   ├─ Groww MCP       → Indian equity (a second broker)
    ├─ INDmoney MCP    → US equity, EPF
    └─ asks you        → Bitcoin
         └──► writes JSON into data/  ──►  a local server lists it  ──►  the browser imports it into SQLite
@@ -110,6 +111,7 @@ only hides which one is wrong:
 |---|---|
 | Wallet | expenses, cash, credit cards |
 | Zerodha Kite | Indian equity, mutual funds, gold and liquid ETFs |
+| Groww | Indian equity held at Groww (merged with Kite by ISIN) |
 | INDmoney | US equity, EPF |
 | Manual | Bitcoin, fixed deposits, Splitwise |
 

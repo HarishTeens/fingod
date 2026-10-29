@@ -7,7 +7,7 @@ version is [CLAUDE.md](CLAUDE.md); read it. The essentials:
 
 fingod is a local-first net worth tracker that runs entirely in the browser: vanilla ES modules and SQLite
 compiled to WebAssembly. **You are the connector.** The browser can't speak MCP, so you read the user's
-sources (Wallet, Zerodha Kite, INDmoney) over MCP and write JSON files into `data/`; the app imports them.
+sources (Wallet, Zerodha Kite, Groww, INDmoney) over MCP and write JSON files into `data/`; the app imports them.
 
 - If asked to set fingod up, follow [docs/ONBOARDING.md](docs/ONBOARDING.md): a short form in the terminal: selectable
   questions (your multiple-choice tool), then a submit step. [PROMPT.md](PROMPT.md) is the prompt that points there.

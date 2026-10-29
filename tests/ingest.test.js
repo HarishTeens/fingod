@@ -60,3 +60,10 @@ test('every problem in a file is reported at once, not one per round trip', () =
   p.balances[1].amount_inr = -500
   assert.throws(() => validateCheckpoint(p), (e) => e instanceof IngestError && /sleeve must be one of/.test(e.message) && /flip the sign/.test(e.message))
 })
+
+test('a stock held at two brokers can carry its per-broker split; the app ignores it', () => {
+  const p = ok()
+  p.sources = { kite: 'ok', groww: 'stale' }
+  p.holdings[0].brokers = { kite: { qty: 6, invested_inr: 600 }, groww: { qty: 4, invested_inr: 400 } }
+  assert.doesNotThrow(() => validateCheckpoint(p))
+})

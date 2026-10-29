@@ -17,3 +17,9 @@ bearer_token_env_var = "WALLET_MCP_TOKEN"
 
 [mcp_servers.indmoney]
 url = "https://mcp.indmoney.com/mcp"
+
+# Groww: official hosted server, stocks and F&O only. Sign in once with: codex mcp login groww
+# It exposes ORDER tools whose names are not published, so they cannot be disabled here by name.
+# After connecting, list its tools and add the order ones to disabled_tools (see docs/ONBOARDING.md).
+[mcp_servers.groww]
+url = "https://mcp.groww.in/mcp"

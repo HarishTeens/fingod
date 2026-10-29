@@ -71,8 +71,8 @@ landing/             the static landing page (deployed separately)
 - `src/compute/` is pure and has tests. Keep it free of DOM and database access.
 - Pages build HTML strings and **escape every interpolated value** with `esc()` from `ui/format.js`.
 - Colours come from CSS variables in `src/styles/tokens.css`, consumed by role, never as raw hex.
-- Source ownership is exclusive: Wallet owns cash, cards and expenses; Kite owns Indian equity and funds;
-  INDmoney owns US equity and EPF; manual input owns Bitcoin, fixed deposits and Splitwise. Discard the
+- Source ownership is exclusive: Wallet owns cash, cards and expenses; Kite owns Indian equity and funds,
+  Groww owns Indian equity held there (merged with Kite by ISIN); INDmoney owns US equity and EPF; manual input owns Bitcoin, fixed deposits and Splitwise. Discard the
   overlap rather than reconciling it.
 - A source that fails is carried forward and marked `stale`, never written as zero.
 - Credit cards are stored as a positive outstanding balance; Wallet reports them negative.

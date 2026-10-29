@@ -23,7 +23,7 @@ A checkpoint is an immutable snapshot. Send **quantity and price, never a total*
   "as_of_date": "2026-10-29",          // required, YYYY-MM-DD; one file per date
   "usd_inr": 90.12,                    // required if any holding is in USD without its own fx_rate
   "sources": {                         // which sources were read: "ok" | "stale"
-    "wallet": "ok", "kite": "ok", "indmoney": "ok", "manual": "ok"
+    "wallet": "ok", "kite": "ok", "groww": "ok", "indmoney": "ok", "manual": "ok"
   },
   "holdings": [
     {
@@ -36,7 +36,8 @@ A checkpoint is an immutable snapshot. Send **quantity and price, never a total*
       "currency": "INR",               // "INR" (default) or "USD"
       "fx_rate": 1,                    // currency → INR; defaults to 1 for INR, usd_inr for USD
       "avg_cost": 352.0,               // optional
-      "invested_inr": 35200.0          // optional; without it the holding has no return figure
+      "invested_inr": 35200.0,         // optional; without it the holding has no return figure
+      "brokers": { "kite": { "qty": 60, "invested_inr": 21000 }, "groww": { "qty": 40, "invested_inr": 14200 } }  // optional, see below
     }
   ],
   "balances": [
@@ -64,6 +65,14 @@ Rules the app enforces (and reports by name when broken):
   booked as a move to zero.
 - If a hand-entered Bitcoin position exists in the app and the file has no `btc` holding, the app carries
   it forward into the checkpoint.
+
+### One stock at two brokers
+
+A user can hold Indian stocks at both Zerodha (Kite) and Groww. Holdings are matched on ISIN, so the **same ISIN
+must appear once**: write **one** holding with the quantities and `invested_inr` **added** and
+`avg_cost = invested_inr / qty`. The optional `brokers` map records each broker's share. The app ignores it; the
+refresh routine reads it so that if one broker fails, only that broker's share is carried forward (`sources.<broker>:
+"stale"`) while the other's is refreshed.
 
 ### Merging
 

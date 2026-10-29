@@ -1,18 +1,45 @@
 {
-  "context": { "fileName": ["AGENTS.md", "GEMINI.md"] },
+  "context": {
+    "fileName": [
+      "AGENTS.md",
+      "GEMINI.md"
+    ]
+  },
   "mcpServers": {
     "kite": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.kite.trade/mcp"],
-      "excludeTools": ["place_order", "modify_order", "cancel_order", "place_gtt_order", "modify_gtt_order", "delete_gtt_order"]
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.kite.trade/mcp"
+      ],
+      "excludeTools": [
+        "place_order",
+        "modify_order",
+        "cancel_order",
+        "place_gtt_order",
+        "modify_gtt_order",
+        "delete_gtt_order"
+      ]
     },
     "wallet": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.wallet.budgetbakers.com", "--header", "Authorization:${WALLET_AUTH}"],
-      "env": { "WALLET_AUTH": "Bearer $WALLET_MCP_TOKEN" }
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.wallet.budgetbakers.com",
+        "--header",
+        "Authorization:${WALLET_AUTH}"
+      ],
+      "env": {
+        "WALLET_AUTH": "Bearer $WALLET_MCP_TOKEN"
+      }
     },
     "indmoney": {
       "httpUrl": "https://mcp.indmoney.com/mcp"
+    },
+    "groww": {
+      "httpUrl": "https://mcp.groww.in/mcp"
     }
   }
 }

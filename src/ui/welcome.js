@@ -24,7 +24,7 @@ export function render(el, { onData }) {
     el.innerHTML = `<div class="onboard"><div class="panel">
       <div class="eyebrow">${startedEmpty ? 'No data yet' : 'Connect more'}</div>
       <h1>${startedEmpty ? 'Set up from your terminal.' : 'Connect another source.'}</h1>
-      <p class="lede">Your coding agent connects Wallet, Zerodha and INDmoney and walks you through it as a conversation. This page fills in on its own when the first data arrives. Nothing is ever traded: every connector is read-only.</p>
+      <p class="lede">Your coding agent connects Wallet, Zerodha, Groww and INDmoney and walks you through it as a conversation. This page fills in on its own when the first data arrives. Nothing is ever traded: every connector is read-only.</p>
 
       <div class="eyebrow" style="margin-top:26px">1 · Start your agent inside the repo</div>
       <div class="agents">${Object.entries(AGENTS).map(([id, x]) => `<button class="btn" data-agent="${id}" aria-pressed="${id === cur}">${esc(x.name)}</button>`).join(' ')}</div>
