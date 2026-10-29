@@ -37,11 +37,11 @@ terminal (selectable questions, then a submit step), and the browser only shows 
 python3 -m http.server 8000 --bind 127.0.0.1   # the standard library: nothing from this repo is run
 open "http://localhost:8000/?demo"             # explore with invented data, no accounts needed
 python3 serve.py                               # optional: the same, plus a manifest of data/, and it opens a browser
-node --test tests/               # unit tests for the engine and the ingest validation (Node 20+)
+node --test                      # unit tests for the engine and the ingest validation (any Node 20+)
 node scripts/screenshot.mjs "http://localhost:8000/?demo#/investments" out.png --full   # Node 22+, Chrome
 ```
 
-There is nothing to install. Run a single test file with `node --test tests/compute.test.js`.
+There is nothing to install. Run a single test file with `node --test tests/compute.test.js` (a bare `node --test` finds them all; the `tests/` directory form breaks on Node 22+).
 
 ## Layout
 

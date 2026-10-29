@@ -53,3 +53,10 @@ test('standing-row files are recognised, and a checkpoint may carry its own spli
   const bad = ok(); bad.balances.push({ kind: 'splitwise', ref: 'Friend' })
   assert.throws(() => validateCheckpoint(bad), /splitwise entry needs ref and amount_inr/)
 })
+
+test('every problem in a file is reported at once, not one per round trip', () => {
+  const p = ok()
+  p.holdings[0].sleeve = 'crypto'
+  p.balances[1].amount_inr = -500
+  assert.throws(() => validateCheckpoint(p), (e) => e instanceof IngestError && /sleeve must be one of/.test(e.message) && /flip the sign/.test(e.message))
+})

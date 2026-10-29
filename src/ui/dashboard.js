@@ -77,7 +77,7 @@ export function render(el) {
   const series = networthSeries()
   const a = allocationNow()
   el.innerHTML = `<div class="grid" style="gap:16px">${hero(series)}${salesBanner()}
-    <div class="grid cols-3">${networthCard(series)}${allocationCard(a)}</div>${spendCard()}${rebalanceCard(a)}</div>`
+    <div class="grid cols-3" style="align-items:start">${networthCard(series)}${allocationCard(a)}</div>${spendCard()}${rebalanceCard(a)}</div>`
   el.querySelector('svg [data-label]')?.closest('section') // (bars carry data-period/data-label for the Expenses drill-down)
   el.addEventListener('click', (e) => {
     const bar = e.target.closest('rect[data-period]')

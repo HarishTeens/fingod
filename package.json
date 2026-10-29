@@ -5,6 +5,6 @@
   "description": "Local-first net worth and portfolio tracker. No dependencies, no build step.",
   "scripts": {
     "start": "python3 serve.py",
-    "test": "node --test tests/"
+    "test": "node --test"
   }
 }

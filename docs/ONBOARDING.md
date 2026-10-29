@@ -41,12 +41,14 @@ make it **selectable**, and let the user **submit** a whole round at once.
    python3 -m http.server 8000 --bind 127.0.0.1
    ```
 
-   If port 8000 is busy, pick another. **Confirm your server is the one answering**:
+   If port 8000 is busy, pick another, and **remember it**: every later mention of `8000` or `<port>` in this
+   guide and in `SKILL.md` means the port you chose. **Confirm your server is the one answering**:
    `curl -s -o /dev/null -w '%{http_code}' localhost:<port>/src/main.js` must print `200`. A leftover server
    from an earlier run can hold the port, and a failed start is easy to miss.
 4. **Open it** in the user's browser: `open http://localhost:<port>` (macOS), `xdg-open …` (Linux) or
-   `start …` (Windows). They will see "No data yet". Tell them to leave the tab open: it fills in on its own
-   as you write files.
+   `start …` (Windows). If none of those exist (a headless or remote machine), give the user the URL to open
+   themselves. They will see "No data yet". Tell them to leave the tab open: it fills in on its own as you
+   write files.
 
 ## 2. Round 1: what do you use?
 
@@ -137,14 +139,16 @@ now*), so they are at the keyboard when the link appears. Then:
 - **INDmoney.** OAuth in the browser (mobile number, OTP, MPIN). Then SKILL.md §3 for US holdings, EPF (if chosen)
   and USD wallet cash.
 
-Write everything into **one** `data/checkpoints/<YYYY-MM-DD>.json`. If it already exists, read it and merge
-your sleeves in rather than overwriting. Send `qty` and `price`, never a total. Validate each file with
+Write everything into **one** `data/checkpoints/<YYYY-MM-DD>.json`. If it already exists, **merge** instead of
+overwriting: read it, replace its holdings by `(sleeve, symbol)` and its balances by `(kind, ref)` with your fresh
+ones, keep everything else, and write it back. Send `qty` and `price`, never a total. Validate each file with
 `python3 -m json.tool`.
 
 ## 6. Write the typed-in figures
 
 **Bitcoin** goes into the checkpoint as a holding: `{"sleeve":"btc","symbol":"BTC","name":"Bitcoin","qty":<qty>,
-"price":<value / qty>,"avg_cost":<paid / qty>,"invested_inr":<paid>}`.
+"price":<value / qty>,"avg_cost":<paid / qty>,"invested_inr":<paid>}`. If they didn't say what they paid, **leave
+`avg_cost` and `invested_inr` out** entirely: the app then shows no return for it rather than inventing one.
 
 **Fixed deposits, Splitwise and targets** go into `data/standing/manual.json` (see `docs/DATA-FORMAT.md`; the app
 imports it and it is safe to re-send):
@@ -157,7 +161,11 @@ imports it and it is safe to re-send):
 }
 ```
 
-Always merge into an existing `data/standing/manual.json` rather than overwriting it.
+In `target_allocation`, `liquid` is the cash the app labels **"Bank balances"**. `epf` is also a valid key; leave it
+out (as above) unless the user wants EPF counted in the rebalance, since it can't be rebalanced.
+
+Always merge into an existing `data/standing/manual.json` rather than overwriting it: replace fixed deposits by
+`(bank, principal, start_date)` and people by name, and keep the rest.
 
 ## 7. Check it worked
 

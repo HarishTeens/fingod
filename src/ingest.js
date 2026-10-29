@@ -18,32 +18,36 @@ export function validateCheckpoint(p) {
   if (!p || typeof p !== 'object') fail('not a checkpoint: expected a JSON object')
   if (!DATE.test(p.as_of_date || '')) fail(`as_of_date must be YYYY-MM-DD, got ${JSON.stringify(p.as_of_date)}`)
   if (!Array.isArray(p.holdings)) fail('holdings must be an array')
+  // Collect every problem in the file, so fixing one doesn't just reveal the next on a second round trip.
+  const problems = []
+  const bad = (m) => problems.push(m)
   const seen = new Set()
   p.holdings.forEach((h, i) => {
     const at = `holdings[${i}]${h && h.symbol ? ` (${h.symbol})` : ''}`
-    if (!h || !SLEEVES.includes(h.sleeve)) fail(`${at}: sleeve must be one of ${SLEEVES.join(', ')}`)
-    if (!h.symbol) fail(`${at}: symbol is required`)
-    if (!isNum(h.qty)) fail(`${at}: qty is required and must be a number`)
-    if (!isNum(h.price)) fail(`${at}: price is required and must be a number`)
-    if (h.currency && h.currency !== 'INR' && !isNum(h.fx_rate) && !isNum(p.usd_inr)) fail(`${at}: a ${h.currency} holding needs fx_rate or a checkpoint usd_inr`)
+    if (!h || !SLEEVES.includes(h.sleeve)) return bad(`${at}: sleeve must be one of ${SLEEVES.join(', ')}`)
+    if (!h.symbol) return bad(`${at}: symbol is required`)
+    if (!isNum(h.qty)) bad(`${at}: qty is required and must be a number`)
+    if (!isNum(h.price)) bad(`${at}: price is required and must be a number`)
+    if (h.currency && h.currency !== 'INR' && !isNum(h.fx_rate) && !isNum(p.usd_inr)) bad(`${at}: a ${h.currency} holding needs fx_rate or a checkpoint usd_inr`)
     const key = `${h.sleeve}\0${h.symbol}`
-    if (seen.has(key)) fail(`${at}: duplicate ${h.sleeve}/${h.symbol} in one checkpoint`)
+    if (seen.has(key)) bad(`${at}: duplicate ${h.sleeve}/${h.symbol} in one checkpoint`)
     seen.add(key)
   })
   const refs = new Set()
   ;(p.balances || []).forEach((b, i) => {
     if (b && b.kind === 'splitwise') { // normally snapshotted from the standing rows; stored as given if a file carries them (history exports)
-      if (!b.ref || !isNum(b.amount_inr)) fail(`balances[${i}]: a splitwise entry needs ref and amount_inr`)
+      if (!b.ref || !isNum(b.amount_inr)) bad(`balances[${i}]: a splitwise entry needs ref and amount_inr`)
       return
     }
-    if (!b || !BALANCE_KINDS.includes(b.kind)) fail(`balances[${i}]: kind must be one of ${BALANCE_KINDS.join(', ')}`)
-    if (!b.ref) fail(`balances[${i}]: ref is required`)
-    if (!isNum(b.amount_inr)) fail(`balances[${i}] (${b.ref}): amount_inr must be a number`)
-    if (b.kind === 'credit_card' && Number(b.amount_inr) < 0) fail(`balances[${i}] (${b.ref}): credit_card is stored positive = outstanding; Wallet reports it negative, so flip the sign`)
+    if (!b || !BALANCE_KINDS.includes(b.kind)) return bad(`balances[${i}]: kind must be one of ${BALANCE_KINDS.join(', ')}`)
+    if (!b.ref) return bad(`balances[${i}]: ref is required`)
+    if (!isNum(b.amount_inr)) bad(`balances[${i}] (${b.ref}): amount_inr must be a number`)
+    if (b.kind === 'credit_card' && Number(b.amount_inr) < 0) bad(`balances[${i}] (${b.ref}): credit_card is stored positive = outstanding; Wallet reports it negative, so flip the sign`)
     const key = `${b.kind}\0${b.ref}`
-    if (refs.has(key)) fail(`balances[${i}]: duplicate ${b.kind}/${b.ref}`)
+    if (refs.has(key)) bad(`balances[${i}]: duplicate ${b.kind}/${b.ref}`)
     refs.add(key)
   })
+  if (problems.length) fail(problems.length > 6 ? `${problems.slice(0, 6).join('; ')}; and ${problems.length - 6} more` : problems.join('; '))
 }
 
 /** Store one checkpoint, replacing any other on the same date. Returns warnings. */

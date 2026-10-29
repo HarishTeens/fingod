@@ -13,7 +13,7 @@ sources (Wallet, Zerodha Kite, INDmoney) over MCP and write JSON files into `dat
   questions (your multiple-choice tool), then a submit step. [PROMPT.md](PROMPT.md) is the prompt that points there.
 - File formats: [docs/DATA-FORMAT.md](docs/DATA-FORMAT.md).
 - **Every checkpoint starts with an update.** Fast-forward pull the latest `main` (never merge, reset or force), tell the user
-  what changed, and re-read the routine. Details: SKILL.md §0.
+  what changed, and re-read the routine. Details: the update step at the top of `SKILL.md`'s Preflight (item 0).
 - Field mappings and the whole refresh routine: [.claude/skills/refresh/SKILL.md](.claude/skills/refresh/SKILL.md).
   It is a plain Markdown file; follow it whatever agent you are.
 
@@ -43,5 +43,5 @@ Wallet needs `export WALLET_MCP_TOKEN=<token>` before the agent starts. The Kite
 
 ```bash
 python3 -m http.server 8000 --bind 127.0.0.1    # then open http://localhost:8000 (add ?demo for invented data)
-node --test tests/                              # Node 20+, no dependencies
+node --test                                     # any Node 20+, no dependencies
 ```

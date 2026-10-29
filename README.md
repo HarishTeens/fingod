@@ -141,7 +141,7 @@ only hides which one is wrong:
 ## Tests
 
 ```bash
-node --test tests/      # 30 tests: the engine, plus ingest validation. Node 20+, no dependencies.
+node --test      # the engine, plus ingest validation. Any Node 20+, no dependencies.
 ```
 
 ## License

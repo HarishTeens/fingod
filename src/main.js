@@ -77,7 +77,7 @@ async function poll() {
     const el = document.getElementById('syncstate')
     const bad = inboxFailures()
     if (el) {
-      el.innerHTML = bad.length ? `<a href="#/data" style="color:var(--critical)" title="${esc(bad.map((b) => `${b.path}: ${b.error}`).join('\n'))}">⚠ ${bad.length} file${bad.length > 1 ? 's' : ''} in data/ couldn't be imported</a>` : esc(r.available ? 'watching data/' : 'no local server: open via http://localhost to auto-import')
+      el.innerHTML = bad.length ? `<a href="#/data" style="color:var(--critical)" title="${esc(bad.map((b) => `${b.path}: ${b.error}`).join('\n'))}">⚠ ${bad.length === 1 ? esc(bad[0].path) : `${bad.length} files in data/`} couldn't be imported</a>` : esc(r.available ? 'watching data/' : 'no local server: open via http://localhost to auto-import')
     }
     if (r.imported.length && route() !== 'welcome') show()
   } catch (e) { console.error(e) }

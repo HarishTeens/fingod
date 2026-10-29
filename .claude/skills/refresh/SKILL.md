@@ -25,16 +25,18 @@ Weekly, or whenever asked. **It never polls.**
 
 ## 0. Preflight
 
-0. **Update fingod first.** The routine and the app improve over time, so every checkpoint starts from the
-   latest `main`. Only ever pull from this checkout's own `origin`.
-   - `git fetch origin main`, then `git rev-list --count HEAD..origin/main`. If it prints `0` you are up to
-     date: say nothing and move on.
-   - Otherwise check `git status --porcelain --untracked-files=no`. If it shows local edits to tracked files,
-     **do not pull**; tell the user there are local changes and carry on with what you have. (`data/` is
-     gitignored, so your data never blocks a pull.)
-   - Show what is coming: `git log --oneline HEAD..origin/main` and `git diff --stat HEAD..origin/main`.
-   - Pull **fast-forward only**: `git pull --ff-only origin main`. Never merge, rebase, reset, stash or force
-     anything. If it cannot fast-forward, stop and tell the user.
+0. **The update step: bring fingod up to the latest `main` first.** (Other files call this "the update step".)
+   The routine and the app improve over time, so every checkpoint starts here. Only ever pull from this
+   checkout's own `origin`. Decide in this order:
+   1. `git fetch origin main`, then `git rev-list --count HEAD..origin/main`. **`0` means up to date: say
+      nothing and move on to item 1.**
+   2. Behind, so check `git status --porcelain --untracked-files=no`. **Any output means local edits to
+      tracked files: do not pull.** Tell the user there are local changes and carry on with what you have.
+      (`data/` is gitignored, so your data never blocks a pull.)
+   3. Clean, so show what is coming: `git log --oneline HEAD..origin/main` and `git diff --stat
+      HEAD..origin/main`.
+   4. Pull **fast-forward only**: `git pull --ff-only origin main`. Never merge, rebase, reset, stash or force
+      anything. If it cannot fast-forward, stop and tell the user.
    - **Tell the user, before you carry on**, that fingod was updated and what changed, in a sentence or two
      (the commit subjects). If the update touched instructions (`.claude/skills/`, `docs/ONBOARDING.md`,
      `AGENTS.md`, `CLAUDE.md`), say so.
@@ -42,13 +44,14 @@ Weekly, or whenever asked. **It never polls.**
      permission config (`.mcp.json`, `.codex/config.toml`, `.gemini/settings.json`, `.claude/settings.json`),
      tell the user to restart the agent from the repo folder, because those load when a session starts.
    - No network, or `origin` unreachable? Say so in one line and carry on.
-1. **Is the app running?** Use the port the user's server is on (8000 unless told otherwise) and check
-   that it serves *this* repo: `curl -s -o /dev/null -w '%{http_code}' localhost:8000/src/main.js` must
-   print `200`. A refused connection or another status means it isn't up, or a leftover server holds the
-   port. Start it from the repo folder, in the background, with
-   `python3 -m http.server 8000 --bind 127.0.0.1` (the standard library; `python3 serve.py` also works),
-   re-run the check, and tell the user to open <http://localhost:8000>. They watch the app fill in as you
-   write files. A file the app cannot import is reported on its Data page with the file and field named.
+1. **Is the app running?** Use the port the user's server is on (`<port>`: 8000 unless the setup chose another;
+   ask or look for it if you don't know) and check that it serves *this* repo:
+   `curl -s -o /dev/null -w '%{http_code}' localhost:<port>/src/main.js` must print `200`. A refused connection
+   or another status means it isn't up, or a leftover server holds the port. Start it from the repo folder, in
+   the background, with `python3 -m http.server <port> --bind 127.0.0.1` (the standard library; `python3 serve.py`
+   also works), re-run the check, and tell the user to open `http://localhost:<port>`. They watch the app fill
+   in as you write files. A file the app cannot import is reported in the top bar and on the Data page, with
+   the file and field named.
 2. **Find the last checkpoint.** Read the newest file in `data/checkpoints/` (none means this is a
    first run). You need its `as_of_date`, its `usd_inr`, and `previous_manual`: the `BTC` holding's
    `qty`, `price`, `avg_cost` and `invested_inr`, offered as the default in §4.
