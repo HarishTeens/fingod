@@ -176,6 +176,7 @@
       <button class="agent" type="button" data-agent="claude" aria-pressed="true">Claude Code</button>
       <button class="agent" type="button" data-agent="codex" aria-pressed="false">Codex CLI</button>
       <button class="agent" type="button" data-agent="gemini" aria-pressed="false">Gemini CLI</button>
+      <button class="agent" type="button" data-agent="pi" aria-pressed="false">Pi</button>
     </div>
     <div class="cmd"><pre id="cmd">git clone https://github.com/HarishTeens/fingod.git && cd fingod && claude</pre><button class="btn copysm" type="button" data-copy="cmd">Copy command</button></div>
     <p class="hint" id="agenthint">Starting inside the folder is what lets Claude Code load the project&rsquo;s MCP servers. It asks you to approve them once.</p>
@@ -199,7 +200,7 @@ python3 -m http.server 8000 --bind 127.0.0.1     # then open http://localhost:80
   <div class="faq">
     <details><summary>Is my data safe?</summary><p>Your finances never leave your machine. The app runs in your browser and stores everything in a SQLite database in that browser. The files your assistant writes go into a <code>data/</code> folder that git ignores. There is no account, server or analytics.</p></details>
     <details><summary>Can it place trades?</summary><p>No. Every connector is read-only, and the instructions forbid order tools outright. Kite's server exposes them; fingod never calls them.</p></details>
-    <details><summary>Which assistants work?</summary><p>Claude Code, Codex CLI and Gemini CLI are set up out of the box: the repo ships each one&rsquo;s project MCP config (<code>.mcp.json</code>, <code>.codex/config.toml</code>, <code>.gemini/settings.json</code>) and instructions (<code>CLAUDE.md</code>, <code>AGENTS.md</code>). Any other assistant with shell access and MCP support can follow the same prompt.</p></details>
+    <details><summary>Which assistants work?</summary><p>Claude Code, Codex CLI, Gemini CLI and Pi are set up out of the box: the repo ships each one&rsquo;s project MCP config (<code>.mcp.json</code>, <code>.codex/config.toml</code>, <code>.gemini/settings.json</code>, <code>.pi/mcp.json</code>) and instructions (<code>CLAUDE.md</code>, <code>AGENTS.md</code>). Any other assistant with shell access and MCP support can follow the same prompt.</p></details>
     <details><summary>Why start the assistant inside the folder?</summary><p>An assistant only loads a project&rsquo;s MCP servers when its session starts in that folder, and you approve them at that moment. Cloning first and starting the assistant from inside it means the whole setup runs in one session, with nothing to restart.</p></details>
     <details><summary>Do I need every connector?</summary><p>No. Pick the ones you use. Bitcoin, fixed deposits and Splitwise are just typed in. You can also look around first with the built-in demo data.</p></details>
     <details><summary>Why does it need Python?</summary><p>Only for <code>serve.py</code>, a tiny static file server. Browsers won't load WebAssembly from a plain file, and the server also lets the app see the folder your assistant writes to. There is no backend and nothing to install.</p></details>
@@ -222,7 +223,8 @@ python3 -m http.server 8000 --bind 127.0.0.1     # then open http://localhost:80
   var AGENTS = {
     claude: { cmd: 'claude', hint: 'Starting inside the folder is what lets Claude Code load the project\u2019s MCP servers. It asks you to approve them once.' },
     codex: { cmd: 'codex', hint: 'Codex loads <code>.codex/config.toml</code> once you trust the project. Sign in to INDmoney with <code>codex mcp login indmoney</code>.' },
-    gemini: { cmd: 'gemini', hint: 'Gemini CLI reads <code>.gemini/settings.json</code> from the project. Sign in to INDmoney with <code>/mcp auth indmoney</code>.' }
+    gemini: { cmd: 'gemini', hint: 'Gemini CLI reads <code>.gemini/settings.json</code> from the project. Sign in to INDmoney with <code>/mcp auth indmoney</code>.' },
+    pi: { cmd: 'pi', hint: 'Pi loads <code>.pi/mcp.json</code> once you trust the project. Sign in to INDmoney with <code>/mcp login indmoney</code>.' }
   };
   var CLONE = 'git clone https://github.com/HarishTeens/fingod.git && cd fingod && ';
   document.querySelectorAll('[data-agent]').forEach(function (b) {

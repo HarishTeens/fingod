@@ -1,7 +1,7 @@
 # Onboarding
 
 This is the script for setting fingod up with a new user. **You are their coding agent** (Claude Code,
-Codex CLI, Gemini CLI or similar) and this happens in their terminal. The browser only shows the result; it
+Codex CLI, Gemini CLI, Pi or similar) and this happens in their terminal. The browser only shows the result; it
 does not guide anything, and **you open it once, at the very end** (§7), when there is data to show.
 
 > **Read-only.** Never place, modify or cancel an order. Kite's MCP server exposes order and GTT tools;
@@ -17,7 +17,7 @@ make it **selectable**, and let the user **submit** a whole round at once.
   selectable options, lets you batch **up to 4 questions per call** with **2 to 4 options each**, supports
   `multiSelect` where several answers apply, and adds an "Other" box on its own. Give each option a short
   description, put the recommended option first and label it "(Recommended)", and keep headers to a word or two.
-- **No such tool?** (Codex and Gemini have no equivalent.) Fake it plainly: print the same questions as numbered
+- **No such tool?** (Codex, Gemini and Pi have no equivalent.) Fake it plainly: print the same questions as numbered
   lists, one round at a time, and let the user answer with numbers ("1,3", "all", "none"). Same questions, same
   order.
 - **Header limit:** the tool's headers are at most **12 characters** (`Apps`, `By hand`, `Targets` fit). A question
@@ -106,16 +106,17 @@ continue until they have submitted.
 ## 5. Connect each source
 
 Follow `.claude/skills/refresh/SKILL.md` for every field mapping, and `docs/DATA-FORMAT.md` for the file
-formats. The MCP servers are declared per agent, and the three configs list the same servers:
+formats. The MCP servers are declared per agent, and the four configs list the same servers:
 
 | Agent | Config | Notes |
 |---|---|---|
 | Claude Code | `.mcp.json` | the session must have been **started inside the repo folder**; the user approves the servers |
 | Codex CLI | `.codex/config.toml` | the user trusts the project; INDmoney sign-in: `codex mcp login indmoney` |
 | Gemini CLI | `.gemini/settings.json` | INDmoney sign-in: `/mcp auth indmoney` |
+| Pi | `.pi/mcp.json` | the user trusts the project; INDmoney sign-in: `/mcp login indmoney` |
 
 **If a source's tools aren't available**, don't improvise. Tell the user exactly this: quit, then
-`cd <repo folder>` and start the agent there (`claude`, `codex` or `gemini`; for Wallet, first
+`cd <repo folder>` and start the agent there (`claude`, `codex`, `gemini` or `pi`; for Wallet, first
 `export WALLET_MCP_TOKEN=<the whole token>`), approve or trust the project's MCP config, and run the setup
 again. A session only loads a project's MCP servers when it starts inside that folder. **A Wallet connection that
 fails with HTTP 401 and "invalid JWT format" almost always means the token was truncated** when it was copied:
@@ -145,7 +146,7 @@ now*), so they are at the keyboard when the link appears. Then:
   of assuming. Second, **Groww's MCP server can place orders and its tool names aren't published**, so list its
   tools, use only the clearly read-only ones, and tell the user which order tools to block (you cannot edit their
   permission settings): Claude Code `permissions.deny` as `mcp__groww__<tool>`, Codex `disabled_tools`, Gemini
-  `excludeTools`. Sign-in is the same clickable-link flow as Kite.
+  `excludeTools`, Pi `toolExposure` set to `"hidden"`. Sign-in is the same clickable-link flow as Kite.
 - **INDmoney.** OAuth in the browser (mobile number, OTP, MPIN). Then SKILL.md §3 for US holdings, EPF (if chosen)
   and USD wallet cash.
 

@@ -14,7 +14,7 @@ SQLite compiled to WebAssembly. **No backend, no database server, no build step,
 
 **1. Start your assistant inside the repo.** That is what lets it load the project's MCP servers, so there is
 nothing to restart later. Each agent loads the project's MCP config its own way (`.mcp.json`, `.codex/config.toml`,
-`.gemini/settings.json`; all shipped in the repo), and asks you to approve or trust it once.
+`.gemini/settings.json`, `.pi/mcp.json`; all shipped in the repo), and asks you to approve or trust it once.
 
 ```bash
 # Claude Code
@@ -23,9 +23,11 @@ git clone https://github.com/HarishTeens/fingod.git && cd fingod && claude
 git clone https://github.com/HarishTeens/fingod.git && cd fingod && codex
 # Gemini CLI
 git clone https://github.com/HarishTeens/fingod.git && cd fingod && gemini
+# Pi
+git clone https://github.com/HarishTeens/fingod.git && cd fingod && pi
 ```
 
-**2. Paste this** into your agent: [Claude Code](https://claude.com/claude-code), Codex CLI, Gemini CLI, or any
+**2. Paste this** into your agent: [Claude Code](https://claude.com/claude-code), Codex CLI, Gemini CLI, [Pi](https://pi.dev), or any
 coding assistant with shell access and MCP support:
 
 ```text

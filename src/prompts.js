@@ -5,11 +5,12 @@
 
 export const REPO = 'https://github.com/HarishTeens/fingod.git'
 
-/** The coding agents we ship project MCP config for (keep the three in step). */
+/** The coding agents we ship project MCP config for (keep the four in step). */
 export const AGENTS = {
   claude: { name: 'Claude Code', cmd: 'claude', config: '.mcp.json', how: 'It asks you to approve them once.' },
   codex: { name: 'Codex CLI', cmd: 'codex', config: '.codex/config.toml', how: 'Trust the project so .codex/config.toml loads. Sign in to INDmoney with: codex mcp login indmoney' },
   gemini: { name: 'Gemini CLI', cmd: 'gemini', config: '.gemini/settings.json', how: 'It reads .gemini/settings.json from the project. Sign in to INDmoney with: /mcp auth indmoney' },
+  pi: { name: 'Pi', cmd: 'pi', config: '.pi/mcp.json', how: 'Trust the project so .pi/mcp.json loads. Sign in to INDmoney with: /mcp login indmoney' },
 }
 export const startCommand = (agent) => `git clone ${REPO} && cd fingod && ${(AGENTS[agent] || AGENTS.claude).cmd}`
 

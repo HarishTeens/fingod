@@ -9,9 +9,11 @@ git clone https://github.com/HarishTeens/fingod.git && cd fingod && claude
 git clone https://github.com/HarishTeens/fingod.git && cd fingod && codex
 # Gemini CLI
 git clone https://github.com/HarishTeens/fingod.git && cd fingod && gemini
+# Pi
+git clone https://github.com/HarishTeens/fingod.git && cd fingod && pi
 ```
 
-Then paste the prompt below into your agent (Claude Code, Codex CLI, Gemini CLI or any coding agent with shell access and MCP support). It follows [docs/ONBOARDING.md](docs/ONBOARDING.md): it walks you through connecting
+Then paste the prompt below into your agent (Claude Code, Codex CLI, Gemini CLI, Pi or any coding agent with shell access and MCP support). It follows [docs/ONBOARDING.md](docs/ONBOARDING.md): it walks you through connecting
 your accounts as a short form in your terminal (selectable options, then a submit step), and opens your dashboard in
 your browser once everything is connected. You can also paste it into a
 session started anywhere else: it clones the repo, and tells you to restart inside the folder when it reaches the
