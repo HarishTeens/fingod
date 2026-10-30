@@ -1,5 +1,5 @@
 # Project-scoped MCP servers for Codex CLI. They load once you trust this project.
-# Keep in step with .mcp.json (Claude Code) and .gemini/settings.json (Gemini CLI).
+# Keep in step with .mcp.json (Claude Code), .gemini/settings.json (Gemini CLI) and .pi/mcp.json (Pi).
 #
 #   INDmoney: sign in once with   codex mcp login indmoney
 #   Wallet:   export WALLET_MCP_TOKEN=<the whole token> before starting codex

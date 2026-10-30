@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guidance for coding agents (Codex, Gemini CLI, Claude Code and others) working in this repository. The full
+Guidance for coding agents (Codex, Gemini CLI, Pi, Claude Code and others) working in this repository. The full
 version is [CLAUDE.md](CLAUDE.md); read it. The essentials:
 
 ## What this is
@@ -29,13 +29,14 @@ sources (Wallet, Zerodha Kite, Groww, INDmoney) over MCP and write JSON files in
 
 ## MCP servers
 
-Declared per agent, and the three must stay in step:
+Declared per agent, and the four must stay in step:
 
 | Agent | Config | Notes |
 |---|---|---|
 | Claude Code | `.mcp.json` (+ `.claude/settings.json`) | start `claude` inside the repo and approve the servers |
 | Codex CLI | `.codex/config.toml` | trust the project; `codex mcp login indmoney` |
 | Gemini CLI | `.gemini/settings.json` | `/mcp auth indmoney` |
+| Pi | `.pi/mcp.json` (+ `.pi/settings.json`) | trust the project; `/mcp login indmoney`; the skills load as `/skill:setup` and `/skill:refresh` |
 
 Wallet needs `export WALLET_MCP_TOKEN=<token>` before the agent starts. The Kite bridge needs Node 20.18.1+.
 

@@ -8,7 +8,7 @@ description: Set fingod up for a new user as a short selectable form in the term
 Onboarding happens here, in the terminal, as a short form: selectable options, then a submit step. The browser only shows the result.
 
 **Follow `docs/ONBOARDING.md` step by step.** It is the single script for every coding agent (Claude Code, Codex,
-Gemini), so it is the only place the steps are written down. Read it now, then run it.
+Gemini, Pi), so it is the only place the steps are written down. Read it now, then run it.
 
 The short version, so you know what you are walking into:
 

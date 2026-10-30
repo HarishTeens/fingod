@@ -13,7 +13,7 @@ values looking plausible.
 
 The file formats are in `docs/DATA-FORMAT.md`. Read it before writing anything.
 
-Tool names below are written the way Claude Code shows them (`mcp__kite__get_holdings`). In Codex or Gemini CLI the
+Tool names below are written the way Claude Code shows them (`mcp__kite__get_holdings`). In Codex, Gemini CLI or Pi the
 same tools appear under that agent's own naming: match them by the function name after the last `__`
 (`get_holdings`, `get_mf_holdings`, `networth_holdings`, `get_accounts`, `get_records`).
 
@@ -45,7 +45,7 @@ Weekly, or whenever asked. **It never polls.**
      (the commit subjects). If the update touched instructions (`.claude/skills/`, `docs/ONBOARDING.md`,
      `AGENTS.md`, `CLAUDE.md`), say so.
    - **Re-read this file** after pulling: the steps below may have just changed. If the update touched an MCP or
-     permission config (`.mcp.json`, `.codex/config.toml`, `.gemini/settings.json`, `.claude/settings.json`),
+     permission config (`.mcp.json`, `.codex/config.toml`, `.gemini/settings.json`, `.pi/mcp.json`, `.claude/settings.json`),
      tell the user to restart the agent from the repo folder, because those load when a session starts.
    - No network, or `origin` unreachable? Say so in one line and carry on.
 1. **Is the app running?** Use the port the user's server is on (`<port>`: 8000 unless the setup chose another;
@@ -134,7 +134,7 @@ funds are not read.
 > holdings, positions or the profile.
 
 1. **Sign in.** The first tool call starts a browser sign-in (OAuth). Show the user the link clickably, as for Kite
-   (§1), and wait for them to say they are done. Codex: `codex mcp login groww`. Gemini: `/mcp auth groww`. If Claude
+   (§1), and wait for them to say they are done. Codex: `codex mcp login groww`. Gemini: `/mcp auth groww`. Pi: `/mcp login groww`. If Claude
    Code's native sign-in can't complete, the documented fallback is the bridge
    `npx -y mcp-remote https://mcp.groww.in/mcp 52155` (needs Node 20.18.1+); tell the user rather than editing config.
 2. **List the server's tools** and classify each as *read* or *order* from its name and description. Tell the user
@@ -142,7 +142,8 @@ funds are not read.
    permission rule (you cannot edit the user's permission settings yourself):
    - Claude Code: add each to `permissions.deny` in `.claude/settings.json` as `mcp__groww__<tool>`;
    - Codex: add them to `disabled_tools` under `[mcp_servers.groww]` in `.codex/config.toml`;
-   - Gemini: add them to `excludeTools` under `groww` in `.gemini/settings.json`.
+   - Gemini: add them to `excludeTools` under `groww` in `.gemini/settings.json`;
+   - Pi: add them to `toolExposure` under `groww` in `.pi/mcp.json`, each as `"hidden"`.
 3. **Read the holdings tool** (something like holdings or portfolio). Map each stock to a holding in sleeve
    `in_equity` (or `gold` / `debt` for the ISINs in §1), `currency: "INR"`:
    - `symbol` from the trading symbol or name field;

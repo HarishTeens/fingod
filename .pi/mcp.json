@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "kite": {
+      "description": "Zerodha Kite: Indian stocks and mutual funds. Read-only for fingod.",
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.kite.trade/mcp"],
+      "toolExposure": {
+        "place_order": "hidden",
+        "modify_order": "hidden",
+        "cancel_order": "hidden",
+        "place_gtt_order": "hidden",
+        "modify_gtt_order": "hidden",
+        "delete_gtt_order": "hidden"
+      }
+    },
+    "wallet": {
+      "description": "Wallet by BudgetBakers: cash, cards and expenses.",
+      "url": "https://mcp.wallet.budgetbakers.com",
+      "headers": {
+        "Authorization": "Bearer ${WALLET_MCP_TOKEN}"
+      }
+    },
+    "indmoney": {
+      "description": "INDmoney: US stocks, EPF and USD cash.",
+      "url": "https://mcp.indmoney.com/mcp"
+    },
+    "groww": {
+      "description": "Groww: Indian stocks held at Groww. Exposes order tools; fingod only calls read tools.",
+      "url": "https://mcp.groww.in/mcp"
+    }
+  }
+}
