@@ -3,7 +3,7 @@
 #
 #   INDmoney: sign in once with   codex mcp login indmoney
 #   Wallet:   export WALLET_MCP_TOKEN=<the whole token> before starting codex
-#   Kite:     the bridge needs Node 20.18.1 or newer; the login link appears on first use
+#   Kite, Groww: the bridge needs Node 20.18.1 or newer; the login link appears on first use
 
 [mcp_servers.kite]
 command = "npx"
@@ -18,8 +18,9 @@ bearer_token_env_var = "WALLET_MCP_TOKEN"
 [mcp_servers.indmoney]
 url = "https://mcp.indmoney.com/mcp"
 
-# Groww: official hosted server, stocks and F&O only. Sign in once with: codex mcp login groww
-# It exposes ORDER tools whose names are not published, so they cannot be disabled here by name.
+# Groww: official hosted server, stocks and F&O only. Its sign-in only accepts the callback of the
+# bridge Groww documents (port 52155), so native OAuth would be rejected. It exposes ORDER tools whose names are not published, so they cannot be disabled here by name.
 # After connecting, list its tools and add the order ones to disabled_tools (see docs/ONBOARDING.md).
 [mcp_servers.groww]
-url = "https://mcp.groww.in/mcp"
+command = "npx"
+args = ["-y", "mcp-remote", "https://mcp.groww.in/mcp", "52155"]

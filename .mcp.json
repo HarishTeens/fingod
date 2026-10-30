@@ -23,9 +23,14 @@
       "comment": "Returns 401 with OAuth 2.1 + PKCE discovery metadata; Claude Code handles the flow natively."
     },
     "groww": {
-      "type": "http",
-      "url": "https://mcp.groww.in/mcp",
-      "comment": "Groww's official hosted MCP server (stocks and F&O only; mutual funds are not supported yet). Sign-in is a browser link. If Claude Code's native OAuth does not complete, replace this entry with the bridge Groww documents for other clients: command npx, args [-y, mcp-remote, https://mcp.groww.in/mcp, 52155] (needs Node >= 20.18.1). IT EXPOSES ORDER TOOLS and their names are not published: fingod only ever calls read tools. After connecting, list the tools and deny the order ones in .claude/settings.json (see docs/ONBOARDING.md)."
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.groww.in/mcp",
+        "52155"
+      ],
+      "comment": "Groww's official hosted MCP server (stocks and F&O only; mutual funds are not supported yet), through the bridge Groww documents. Its sign-in only accepts the bridge's callback on port 52155 (http://localhost:52155/oauth/callback); Claude Code's native OAuth sends a random port and /callback, which Groww rejects. Needs Node >= 20.18.1, and port 52155 free. IT EXPOSES ORDER TOOLS and their names are not published: fingod only ever calls read tools. After connecting, list the tools and deny the order ones in .claude/settings.json (see docs/ONBOARDING.md)."
     }
   }
 }
