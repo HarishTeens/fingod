@@ -133,10 +133,12 @@ funds are not read.
 > order, or that you cannot clearly tell is read-only.** Use only tools whose names and descriptions say they read
 > holdings, positions or the profile.
 
-1. **Sign in.** The first tool call starts a browser sign-in (OAuth). Show the user the link clickably, as for Kite
-   (§1), and wait for them to say they are done. Codex: `codex mcp login groww`. Gemini: `/mcp auth groww`. Pi: `/mcp login groww`. If Claude
-   Code's native sign-in can't complete, the documented fallback is the bridge
-   `npx -y mcp-remote https://mcp.groww.in/mcp 52155` (needs Node 20.18.1+); tell the user rather than editing config.
+1. **Sign in.** Every agent reaches Groww through the bridge `npx -y mcp-remote https://mcp.groww.in/mcp 52155`
+   (needs Node 20.18.1+), because Groww's sign-in only accepts the bridge's callback,
+   `http://localhost:52155/oauth/callback`; an agent's native OAuth sends another port and is rejected. On first use
+   the bridge prints a browser sign-in link. Show it to the user clickably, as for Kite (§1), and wait for them to say
+   they are done. If the bridge fails to start, port 52155 may be taken by another bridge still running: tell the
+   user rather than editing config.
 2. **List the server's tools** and classify each as *read* or *order* from its name and description. Tell the user
    which tools you will use. **Then tell them which are order tools and that they should block them** with a
    permission rule (you cannot edit the user's permission settings yourself):

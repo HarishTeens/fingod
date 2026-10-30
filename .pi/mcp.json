@@ -26,7 +26,8 @@
     },
     "groww": {
       "description": "Groww: Indian stocks held at Groww. Exposes order tools; fingod only calls read tools.",
-      "url": "https://mcp.groww.in/mcp"
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.groww.in/mcp", "52155"]
     }
   }
 }

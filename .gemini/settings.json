@@ -39,7 +39,13 @@
       "httpUrl": "https://mcp.indmoney.com/mcp"
     },
     "groww": {
-      "httpUrl": "https://mcp.groww.in/mcp"
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.groww.in/mcp",
+        "52155"
+      ]
     }
   }
 }

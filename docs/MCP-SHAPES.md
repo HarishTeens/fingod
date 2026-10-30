@@ -133,8 +133,10 @@ into the `gold` and `debt` sleeves. Overnight-rate ETFs are cash parked in the d
 **Unverified.** This section is written from Groww's public product page, not from a real account. Where it says
 "unknown", the server has not been inspected and the refresh routine must look at what it actually returns.
 
-- **Server:** `https://mcp.groww.in/mcp`, Groww's official hosted MCP. Sign-in is a browser link (OAuth). For clients
-  without native OAuth, Groww documents the bridge `npx … mcp-remote https://mcp.groww.in/mcp 52155`.
+- **Server:** `https://mcp.groww.in/mcp`, Groww's official hosted MCP, reached through the bridge Groww documents,
+  `npx -y mcp-remote https://mcp.groww.in/mcp 52155`. Sign-in is a browser link (OAuth), and it only accepts the
+  bridge's callback `http://localhost:52155/oauth/callback`: a client's native OAuth (Claude Code sends a random port
+  and `/callback`) is rejected.
 - **Covers:** stocks and F&O (holdings, positions, P&L, market context). **Mutual funds, IPOs and bonds are not
   supported yet** ("will be added"), so Groww mutual funds are not read.
 - **Can place orders** (buy, limit and stop-loss; sells need DDPI authorisation). The tool names are **unknown**, so
