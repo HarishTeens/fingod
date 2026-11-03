@@ -189,14 +189,15 @@ accounts you said are cash, credit cards, or to ignore, so it doesn't ask again.
 
 `data/standing/<anything>.json` carries the rows that normally live in the app: fixed deposits, Splitwise
 balances, confirmed trades and the target allocation. It is the way to **bring existing history in**.
-Import is idempotent: a deposit is matched on bank + principal + start date, a trade on
+Import is idempotent: a deposit is matched on bank + principal + start date, a PPF deposit on date + amount, a PPF rate on its quarter, a trade on
 `(sleeve, symbol, exit_date, invested_inr)`, a person by name.
 
 ```jsonc
 {
   "fixed_deposits": [ { "bank": "Example Bank", "principal": 100000, "rate_pct": 6.5, "start_date": "2026-02-01", "maturity_date": "2027-02-01", "compounding": "quarterly" } ],
+  "ppf":            { "deposits": [ { "date": "2026-04-02", "amount_inr": 150000 } ], "rates": [ { "quarter_start": "2026-10-01", "rate_pct": 7.1 } ] },   // rates are set per quarter (Jan, Apr, Jul, Oct 1st)
   "splitwise":      [ { "person": "Friend A", "amount_inr": 3000, "note": "" } ],                 // positive = they owe you
-  "assets":         [ { "kind": "nps", "name": "NPS Tier 1", "value_inr": 180000, "as_of_date": "2026-10-30" } ],   // nps | ppf | property | gold_physical | vehicle | other
+  "assets":         [ { "kind": "nps", "name": "NPS Tier 1", "value_inr": 180000, "as_of_date": "2026-10-30" } ],   // nps | property | gold_physical | vehicle | other
   "liabilities":    [ { "kind": "car_loan", "name": "Car loan", "value_inr": 128000, "as_of_date": "2026-10-30" } ],   // home_loan | car_loan | personal_loan | education_loan | other; the amount you owe, positive
   "trades":         [ { "sleeve": "in_equity", "symbol": "ACME", "exit_date": "2026-06-03", "invested_inr": 18000, "realised_inr": -2200, "holding_days": 60 } ],
   "target_allocation": { "in_equity": 27, "in_mf": 35, "us_equity": 10, "gold": 5, "btc": 5, "fd": 15, "debt": 2, "liquid": 1 }

@@ -1,8 +1,9 @@
 // fingod — boot, routing, shell. No framework, no build step: this file is the
 // whole app's entry point, loaded as a native ES module.
 import * as db from './db.js'
-import { hasData } from './repo.js'
-import { syncInbox as importInbox, inboxFailures } from './ingest.js'
+import { hasData, ppfRateDue } from './repo.js'
+import { quarterLabel } from './compute/ppf.js'
+import { syncInbox as importInbox, inboxFailures, setPpfRate, IngestError } from './ingest.js'
 import { isDemo, loadDemo } from './demo.js'
 import { esc } from './ui/format.js'
 
@@ -46,10 +47,36 @@ async function show() {
       <span class="spacer"></span><span class="sub" id="syncstate"></span>
       <button class="btn" id="theme" title="Switch theme">${theme() === 'dark' ? 'Light' : 'Dark'}</button></header>
     ${isDemo() ? '<div class="banner">You are looking at <b>demo data</b> — every name and number is invented. <a href="#/data">Clear it</a> and connect your own from <a href="#/welcome">setup</a>.</div>' : ''}
+    ${ppfBanner()}
     <main id="page"></main></div>`
   document.getElementById('theme').onclick = () => { localStorage.setItem('fingod-theme', theme() === 'dark' ? 'light' : 'dark'); applyTheme(); show() }
   try { page.render(document.getElementById('page')) } catch (e) { fatal(e) }
+  bindPpfBanner()
   window.scrollTo(0, y)
+}
+
+// The PPF rate changes by government notification each quarter and nothing can read it
+// for you, so when a quarter starts without one, ask once: dismissing hides it until the
+// next quarter, and the Data page can set it any time.
+function ppfBanner() {
+  if (isDemo()) return ''
+  const due = ppfRateDue()
+  if (!due) return ''
+  return `<div class="banner" data-ppf-banner><form class="ppf-rate">
+    <span>New quarter: <b>${esc(quarterLabel(due.quarter_start))}</b>. What PPF interest rate did the government set for it?</span>
+    <label><input name="rate" type="number" step="0.01" min="0" max="20" required value="${due.last_rate ?? ''}" aria-label="PPF rate for the quarter"> %</label>
+    <button class="btn primary" type="submit">Save</button><button class="btn" type="button" data-ppf-dismiss title="Hide until next quarter">Dismiss</button>
+    ${due.last_rate !== null ? `<span class="muted">Filled in with last quarter's ${esc(due.last_rate)}%; change it if it moved.</span>` : ''}</form></div>`
+}
+function bindPpfBanner() {
+  const el = document.querySelector('[data-ppf-banner]')
+  if (!el) return
+  const qs = ppfRateDue().quarter_start
+  el.querySelector('form').onsubmit = (e) => {
+    e.preventDefault()
+    try { setPpfRate(qs, e.target.rate.value) } catch (err) { alert(err instanceof IngestError ? err.message : String(err)) }
+  }
+  el.querySelector('[data-ppf-dismiss]').onclick = () => db.setSetting('ppf_rate_dismissed', qs)
 }
 
 async function showWelcome(seq) {

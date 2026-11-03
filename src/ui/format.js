@@ -25,10 +25,18 @@ export const monthLabel = (d) => { const [y, m] = d.split('-'); return `${MONTHS
 
 export const SLEEVE_LABEL = {
   in_equity: 'IN Equity', in_mf: 'IN Mutual Funds', us_equity: 'US Equity', gold: 'Gold', debt: 'Debt',
-  btc: 'Bitcoin', fd: 'Fixed Deposits', epf: 'EPF', liquid: 'Bank balances', cash: 'Bank balances', insurance: 'Insurance',
+  btc: 'Bitcoin', fd: 'Fixed Deposits', epf: 'EPF', ppf: 'PPF', liquid: 'Bank balances', cash: 'Bank balances', insurance: 'Insurance',
 }
 export const sleeveLabel = (s) => SLEEVE_LABEL[s] || s
 export const sleeveColor = (s) => `var(--sleeve-${s === 'liquid' ? 'liquid' : s})`
+
+/** Categories get their own slots, so flipping the spend chart between label and category never recolours either. */
+const catSlots = new Map()
+export function categoryColor(cat) {
+  if (cat === 'Other') return 'var(--cat-other)'
+  if (!catSlots.has(cat)) catSlots.set(cat, catSlots.size % 8)
+  return `var(--cat-${catSlots.get(cat) + 1})`
+}
 
 /** A label keeps its colour whatever else is on screen: slot by a hash of its name. */
 const slots = new Map()

@@ -62,7 +62,7 @@ export function render(el) {
         ${stat('Avg holding', s.avg_holding_days === null ? '—' : `${s.avg_holding_days} days`)}
       </div>
       <p class="note">Break-even counts as a loser: it consumed the position and returned nothing, and calling it a win would flatter the hit rate. Gross wins and gross losses are shown apart so a big win can't hide behind many small losses.</p>` : `<div class="empty">No realised trades yet. When a position's quantity falls between two checkpoints, it appears above for you to confirm.</div>`}</section>
-    ${ts.length ? `<section class="card"><header><h2>By ${gran}</h2><span class="spacer"></span><div class="tabs">${['month', 'year'].map((g) => `<button class="btn" data-gran="${g}" aria-pressed="${g === gran}">${g === 'month' ? 'Monthly' : 'Yearly'}</button>`).join(' ')}</div></header>
+    ${ts.length ? `<section class="card"><header><h2>By ${gran === 'all' ? 'all time' : gran}</h2><span class="spacer"></span><div class="tabs">${['month', 'year', 'all'].map((g) => `<button class="btn" data-gran="${g}" aria-pressed="${g === gran}">${g === 'month' ? 'Monthly' : g === 'year' ? 'Yearly' : 'All time'}</button>`).join(' ')}</div></header>
       ${stackedBarsSigned(periods)}</section>
     <section class="card"><header><h2>All trades</h2><span class="spacer"></span><span class="hero-label">${ts.length}</span></header>${scrollBox(`<table class="data"><thead><tr><th>Holding</th><th>Sleeve</th><th>Exited</th><th class="num">Held</th><th class="num">Invested</th><th class="num">Realised</th><th class="num">Return</th><th></th></tr></thead><tbody>
       ${tp.rows.map((t) => `<tr><td class="name">${esc(t.symbol)}</td><td>${esc(sleeveLabel(t.sleeve))}</td><td class="num">${shortDate(t.exit_date)}</td><td class="num">${t.holding_days === null ? '—' : `${t.holding_days}d`}</td><td class="num">${money(t.invested_inr)}</td><td class="num">${delta(t.realised_inr)}</td><td class="num">${t.invested_inr ? `${plain((t.realised_inr / t.invested_inr) * 100)}%` : '—'}</td><td><button class="btn" data-del="${t.id}" title="Remove this trade">✕</button></td></tr>`).join('')}
@@ -86,6 +86,8 @@ export function render(el) {
   })
 }
 
+const periodLabel = (p) => (gran === 'all' ? 'All time' : gran === 'year' ? p.slice(0, 4) : monthLabel(p))
+
 /** Bars that can go below zero: wins above the axis, losses below. */
 function stackedBarsSigned(periods) {
   if (!periods.length) return ''
@@ -97,8 +99,8 @@ function stackedBarsSigned(periods) {
   const bars = periods.map((p, i) => {
     const h = (Math.abs(p.realised) / max) * (half - 4), w = Math.min(bw * 0.68, 64), x = pad.l + i * bw + (bw - w) / 2
     const up = p.realised >= 0
-    return `<rect x="${x.toFixed(1)}" y="${(up ? mid - h : mid).toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(h, 1).toFixed(1)}" rx="2" fill="var(--${up ? 'good' : 'critical'})"><title>${gran === 'year' ? p.period.slice(0, 4) : monthLabel(p.period)} · ${compact(p.realised)} · ${p.trades} trade${p.trades === 1 ? '' : 's'}</title></rect>` +
-      (i % step === 0 ? `<text x="${(x + w / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle" fill="var(--muted)" font-size="11.5">${gran === 'year' ? p.period.slice(0, 4) : monthLabel(p.period)}</text>` : '')
+    return `<rect x="${x.toFixed(1)}" y="${(up ? mid - h : mid).toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(h, 1).toFixed(1)}" rx="2" fill="var(--${up ? 'good' : 'critical'})"><title>${periodLabel(p.period)} · ${compact(p.realised)} · ${p.trades} trade${p.trades === 1 ? '' : 's'}</title></rect>` +
+      (i % step === 0 ? `<text x="${(x + w / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle" fill="var(--muted)" font-size="11.5">${periodLabel(p.period)}</text>` : '')
   }).join('')
   return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block"><line x1="${pad.l}" x2="${W - pad.r}" y1="${mid}" y2="${mid}" stroke="var(--baseline)"/><text x="${pad.l - 8}" y="${mid + 4}" text-anchor="end" fill="var(--muted)" font-size="11.5">₹0</text><text x="${pad.l - 8}" y="${pad.t + 10}" text-anchor="end" fill="var(--muted)" font-size="11.5">${compact(max)}</text><text x="${pad.l - 8}" y="${H - pad.b}" text-anchor="end" fill="var(--muted)" font-size="11.5">−${compact(max).replace('₹', '₹')}</text>${bars}</svg>`
 }

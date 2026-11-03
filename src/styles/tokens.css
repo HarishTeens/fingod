@@ -39,6 +39,7 @@
   --sleeve-fd:        #d55181;
   --sleeve-btc:       #7d76e8;
   --sleeve-epf:       #008300;
+  --sleeve-ppf:       #8a9a12;
   --sleeve-cash:      #898781;
   --sleeve-liquid:    #898781;
   /* Closed-only, so it never shares a chart with the live sleeves. */
@@ -100,6 +101,7 @@
   --sleeve-fd:        #e87ba4;
   --sleeve-btc:       #6f68d8;
   --sleeve-epf:       #008300;
+  --sleeve-ppf:       #b8c534;
   --sleeve-cash:      #898781;
   --sleeve-liquid:    #898781;
   /* Closed-only, so it never shares a chart with the live sleeves. */

@@ -1,7 +1,8 @@
 // Demo data: every name and number here is invented. It exists so you can
 // explore the app before connecting anything, and so the README screenshots can
 // be regenerated without exposing a real portfolio.
-import { ingestCheckpoint, ingestTransactions, ingestLedger, saveFixedDeposit, saveSplitwise, recordTrade, saveAsset } from './ingest.js'
+import { ingestCheckpoint, ingestTransactions, ingestLedger, saveFixedDeposit, savePpfDeposit, setPpfRate, saveSplitwise, recordTrade, saveAsset } from './ingest.js'
+import { quartersBetween } from './compute/ppf.js'
 import { setSetting, write, first } from './db.js'
 import { DEFAULT_TARGET } from './compute/allocation.js'
 import { INCOME_CATEGORY_ID } from './compute/income.js'
@@ -95,12 +96,13 @@ export function loadDemo() {
   ingestTransactions({ transactions: transactions() })
   saveFixedDeposit({ bank: 'Example Bank', principal: 100000, rate_pct: 6.5, start_date: '2026-02-01', maturity_date: '2027-02-01' })
   saveFixedDeposit({ bank: 'Example Bank', principal: 50000, rate_pct: 6.75, start_date: '2026-06-10', maturity_date: '2027-06-10' })
+  for (const [d, a] of [['2024-04-03', 150000], ['2025-04-04', 150000], ['2026-04-02', 150000]]) savePpfDeposit({ deposit_date: d, amount_inr: a, note: 'demo' })
+  for (const q of quartersBetween('2024-04-01', new Date().toISOString().slice(0, 10))) setPpfRate(q, 7.1)
   for (const [p, a] of [['Friend A', 3000], ['Friend B', 1500], ['Friend C', -500]]) saveSplitwise(p, a, 'demo')
   for (const t of [['in_equity', 'AAA', '2025-11-17', 10000, 3000, 90], ['in_equity', 'BBB', '2025-12-04', 30000, -7000, 120], ['in_equity', 'CCC', '2026-02-19', 40000, 6200, 200], ['us_equity', 'DDD', '2026-04-08', 25000, 4100, 150], ['in_equity', 'EEE', '2026-06-03', 18000, -2200, 60]])
     recordTrade({ sleeve: t[0], symbol: t[1], exit_date: t[2], invested_inr: t[3], realised_inr: t[4], holding_days: t[5], source: 'demo' })
   saveAsset({ kind: 'nps', name: 'NPS Tier 1', value_inr: 180000, as_of_date: '2026-05-01' })
   saveAsset({ kind: 'nps', name: 'NPS Tier 1', value_inr: 192500, as_of_date: '2026-08-01' })
-  saveAsset({ kind: 'ppf', name: 'PPF', value_inr: 240000, as_of_date: '2026-05-01' })
   saveAsset({ kind: 'car_loan', name: 'Car loan', value_inr: 150000, as_of_date: '2026-05-01', liability: true })
   saveAsset({ kind: 'car_loan', name: 'Car loan', value_inr: 128000, as_of_date: '2026-09-01', liability: true })
   setSetting('target_allocation', DEFAULT_TARGET)

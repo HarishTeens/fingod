@@ -5,6 +5,8 @@ a { color: inherit; }
 .muted { color: var(--muted); }
 .banner { background: var(--card); border: 1px solid var(--ring-strong); border-radius: 16px; padding: 10px 16px; margin: -8px 0 16px; font-size: 13.5px; color: var(--ink-2); }
 .banner a { color: var(--ink); }
+.ppf-rate { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+.ppf-rate input { width: 6em; }
 .app.wide { max-width: 980px; }
 input, select { background: var(--page); color: var(--ink); border: 1px solid var(--ring-strong); border-radius: 12px; padding: 9px 12px; font: inherit; font-size: 14px; width: 100%; }
 input:focus-visible { outline: 2px solid var(--ring-strong); outline-offset: 1px; }

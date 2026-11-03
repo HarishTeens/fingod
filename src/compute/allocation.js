@@ -9,6 +9,7 @@ export function allocate(nw, target) {
   const values = { ...nw.sleeves }
   if (nw.fd_principal) values.fd = nw.fd_principal
   if (nw.epf) values.epf = nw.epf
+  if (nw.ppf) values.ppf = nw.ppf
   if (nw.cash) values.liquid = nw.cash
 
   let base = 0

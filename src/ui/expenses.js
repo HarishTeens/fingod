@@ -1,10 +1,11 @@
 import { transactionsAll, labelsMap, transactionCount } from '../repo.js'
-import { expenseByLabel, breakdown, listTransactions, UNTAGGED } from '../compute/expenses.js'
+import { expenseByLabel, expenseByCategory, breakdown, listTransactions, UNTAGGED } from '../compute/expenses.js'
 import { stackedBars } from './charts.js'
 import { paginate, scrollBox, bindPager } from './pager.js'
-import { compact, moneyExact, money, plain, shortDate, monthLabel, labelColor, esc } from './format.js'
+import { compact, moneyExact, money, plain, shortDate, monthLabel, labelColor, categoryColor, esc } from './format.js'
 
 let gran = 'month'
+let by = null // 'label' | 'category'; null until chosen, then label if the records carry any
 const drill = { period: null, category: null, subcategory: null, label: null }
 
 const periodLabel = (p) => (gran === 'week' ? `Week of ${shortDate(p)}` : monthLabel(p))
@@ -27,7 +28,10 @@ export function render(el) {
   if (!transactionCount()) { el.innerHTML = `<div class="empty">No transactions yet.<br>Connect Wallet from <a href="#/welcome" style="color:var(--ink)">the setup guide</a> and your expenses appear here.</div>`; return }
   const txns = transactionsAll(), labels = labelsMap()
   const draw = () => {
-    const { labels: names, series } = expenseByLabel(txns, labels, gran)
+    const byLabels = expenseByLabel(txns, labels, gran)
+    const chosen = by || (byLabels.labels.every((l) => l === UNTAGGED) ? 'category' : 'label') // no labels in Wallet: spend by category
+    const { labels: names, series } = chosen === 'category' ? expenseByCategory(txns, labels, gran) : byLabels
+    const colorOf = chosen === 'category' ? categoryColor : labelColor
     const shown = series.slice(gran === 'week' ? -26 : -24)
     const base = { period: drill.period, granularity: gran, label: drill.label }
     const byCat = breakdown(txns, labels, { ...base, by: 'category', category: drill.category })
@@ -40,10 +44,10 @@ export function render(el) {
       drill.subcategory && { text: drill.subcategory },
     ].filter(Boolean)
     el.innerHTML = `<div class="grid" style="gap:16px">
-    <section class="card"><header><h2>${gran === 'week' ? 'Weekly' : 'Monthly'} spend by label</h2><span class="spacer"></span><div class="tabs">${['week', 'month'].map((g) => `<button class="btn" data-gran="${g}" aria-pressed="${g === gran}">${g === 'week' ? 'Weekly' : 'Monthly'}</button>`).join(' ')}</div></header>
-      ${stackedBars({ periods: shown.map((p) => ({ ...p, label: gran === 'week' ? shortDate(p.period) : monthLabel(p.period) })), keys: names.slice().reverse(), color: labelColor, yFormat: compact, title: 'Spend by label' })}
-      <div class="legend">${names.map((l) => `<span><i class="swatch" style="background:${labelColor(l)}"></i>${esc(l)}</span>`).join('')}</div>
-      <p class="note">Click a bar to drill into that period. Bars are net of money that came back under the same label; transfers between your own accounts and Investments are excluded.</p></section>
+    <section class="card"><header><h2>${gran === 'week' ? 'Weekly' : 'Monthly'} spend by ${chosen}</h2><span class="spacer"></span><div class="tabs">${['label', 'category'].map((b) => `<button class="btn" data-by="${b}" aria-pressed="${b === chosen}">By ${b}</button>`).join(' ')}</div><div class="tabs" style="margin-left:8px">${['week', 'month'].map((g) => `<button class="btn" data-gran="${g}" aria-pressed="${g === gran}">${g === 'week' ? 'Weekly' : 'Monthly'}</button>`).join(' ')}</div></header>
+      ${stackedBars({ periods: shown.map((p) => ({ ...p, label: gran === 'week' ? shortDate(p.period) : monthLabel(p.period) })), keys: names.slice().reverse(), color: colorOf, yFormat: compact, title: `Spend by ${chosen}` })}
+      <div class="legend">${names.map((l) => `<span><i class="swatch" style="background:${colorOf(l)}"></i>${esc(l)}</span>`).join('')}</div>
+      <p class="note">Click a bar to drill into that period. Bars are net of money that came back under the same ${chosen}; transfers between your own accounts and Investments are excluded.</p></section>
     ${drill.period || drill.category || drill.label ? `<section class="card" style="padding:14px 22px"><div class="crumbs">${crumbs.map((c, i) => `${i ? '<span class="sep">›</span>' : ''}${i < crumbs.length - 1 ? `<button class="crumb" data-crumb="${i}">${esc(c.text)}</button>` : `<span class="crumb current">${esc(c.text)}</span>`}`).join('')}
       ${drill.label ? `<button class="btn" style="margin-left:10px" data-clear-label>label: ${esc(drill.label)} ✕</button>` : ''}${drill.period ? '<button class="btn" style="margin-left:auto" data-reset>Clear</button>' : ''}</div></section>` : ''}
     <div class="grid cols-2">${list('expenses-cats', drill.category ? `${esc(drill.category)} — subcategories` : 'Categories', byCat.rows, byCat.total, drill.subcategory || drill.category, 'cat', null)}${list('expenses-labels', 'Labels', byLabel.rows, byLabel.total, drill.label, 'label', labelColor)}</div>
@@ -56,7 +60,13 @@ export function render(el) {
   bindPager(el, draw)
   el.addEventListener('click', (e) => {
     const g = e.target.closest('[data-gran]'); if (g) { gran = g.dataset.gran; Object.assign(drill, { period: null, category: null, subcategory: null }); return draw() }
-    const bar = e.target.closest('rect[data-period]'); if (bar) { Object.assign(drill, { period: bar.dataset.period, label: bar.dataset.label === UNTAGGED ? UNTAGGED : bar.dataset.label, category: null, subcategory: null }); return draw() }
+    const b = e.target.closest('[data-by]'); if (b) { by = b.dataset.by; Object.assign(drill, { period: null, category: null, subcategory: null, label: null }); return draw() }
+    const bar = e.target.closest('rect[data-period]'); if (bar) {
+      const seg = bar.dataset.label
+      if (el.querySelector('[data-by][aria-pressed="true"]').dataset.by === 'category') Object.assign(drill, { period: bar.dataset.period, category: seg === 'Other' ? null : seg, subcategory: null, label: null })
+      else Object.assign(drill, { period: bar.dataset.period, label: seg === UNTAGGED ? UNTAGGED : seg, category: null, subcategory: null })
+      return draw()
+    }
     const cat = e.target.closest('[data-cat]'); if (cat) { if (!drill.category) drill.category = cat.dataset.cat; else drill.subcategory = cat.dataset.cat; return draw() }
     const lab = e.target.closest('[data-label]'); if (lab) { drill.label = drill.label === lab.dataset.label ? null : lab.dataset.label; return draw() }
     const crumb = e.target.closest('[data-crumb]'); if (crumb) { el._crumbs[Number(crumb.dataset.crumb)].on?.(); return draw() }

@@ -108,7 +108,7 @@ NW_liquid = cash + IN equity + IN MF + US equity + BTC + FD principal − credit
 NW_total  = NW_liquid + EPF + FD accrued interest + Splitwise receivable + other assets − loans
 ```
 
-Other assets (NPS, PPF, property, physical gold) and loans are hand-entered, dated rows. They are illiquid,
+Other assets (NPS, property, physical gold) and loans are hand-entered, dated rows. They are illiquid,
 so they move the total and never the liquid figure.
 
 Liquid is what you could act on. Total is what you are worth on paper. Both are computed at every
@@ -134,11 +134,12 @@ The schema is in `src/schema.js` (versioned migrations, applied on open):
 | `checkpoints` | One row per snapshot date, with the USD/INR rate, per-source status and optional benchmark levels |
 | `holdings` | Positions at a checkpoint: sleeve, symbol, ISIN, qty, price, fx, value, cost basis |
 | `balances` | Cash, credit cards, EPF and Splitwise at a checkpoint |
+| `ppf_deposits`, `ppf_rates` | PPF: valued by formula (`compute/ppf.js`) from deposits and the quarterly rate, so a deposit entered today prices correctly at older checkpoints. Counts in total net worth, never liquid |
 | `fixed_deposits`, `splitwise_balances`, `manual_holdings` | Standing and hand-entered rows |
 | `transactions`, `transaction_labels`, `wallet_accounts` | Wallet records, idempotent on Wallet's own id |
 | `trades` | Realised profit you confirmed |
 | `ledger` | Every buy and sell from a tradebook or a CAS: the exact dates and prices a snapshot cannot see |
-| `manual_assets` | NPS, PPF, property and loans, several dated entries each |
+| `manual_assets` | NPS, property and loans, several dated entries each |
 | `benchmark_levels` | Daily Nifty 50 and S&P 500 closes, so benchmarks load in one file rather than one level per checkpoint |
 | `settings` | Target allocation, your agent choice |
 | `imported_files` | Which files from `data/` were imported, so syncing twice is a no-op |
