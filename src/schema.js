@@ -1,6 +1,6 @@
 // The whole schema. SQLite, in the browser, persisted to IndexedDB.
 // Bump SCHEMA_VERSION and add a step to MIGRATIONS to change it later.
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 export const MIGRATIONS = [
   // 1
@@ -165,6 +165,19 @@ export const MIGRATIONS = [
     as_of_date TEXT NOT NULL,
     level      REAL NOT NULL,                     -- nifty50: the index close; sp500: SPY's close in USD
     PRIMARY KEY (key, as_of_date)
+  );
+  `,
+  // 4: PPF, valued by formula from its deposits and the quarterly rate
+  `
+  CREATE TABLE ppf_deposits (
+    id           INTEGER PRIMARY KEY,
+    deposit_date TEXT NOT NULL,
+    amount_inr   REAL NOT NULL,
+    note         TEXT
+  );
+  CREATE TABLE ppf_rates (
+    quarter_start TEXT PRIMARY KEY,               -- first day of Jan, Apr, Jul or Oct
+    rate_pct      REAL NOT NULL
   );
   `,
 ]

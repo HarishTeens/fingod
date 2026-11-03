@@ -185,7 +185,7 @@ export function classify(payload) {
   if (payload && Array.isArray(payload.holdings) && payload.as_of_date) return 'checkpoint'
   if (payload && !Array.isArray(payload) && Array.isArray(payload.ledger)) return 'ledger'
   if (payload && !Array.isArray(payload) && !payload.as_of_date && payload.benchmarks && typeof payload.benchmarks === 'object' && Object.values(payload.benchmarks).every(Array.isArray)) return 'benchmarks'
-  if (payload && !Array.isArray(payload) && ['fixed_deposits', 'splitwise', 'trades', 'target_allocation', 'assets', 'liabilities'].some((k) => k in payload)) return 'standing'
+  if (payload && !Array.isArray(payload) && ['fixed_deposits', 'ppf', 'splitwise', 'trades', 'target_allocation', 'assets', 'liabilities'].some((k) => k in payload)) return 'standing'
   if (payload && (Array.isArray(payload.transactions) || Array.isArray(payload))) return 'transactions'
   return null
 }
@@ -305,10 +305,17 @@ export function saveFixedDeposit(fd) {
 /** Standing rows from a file: fixed deposits, Splitwise, confirmed trades and the target
  * allocation. Idempotent — a deposit is matched on bank + principal + start date. */
 export function ingestStanding(p) {
-  const out = { fixed_deposits: 0, splitwise: 0, trades: 0, assets: 0, liabilities: 0, target_allocation: false }
+  const out = { fixed_deposits: 0, ppf_deposits: 0, ppf_rates: 0, splitwise: 0, trades: 0, assets: 0, liabilities: 0, target_allocation: false }
   for (const fd of p.fixed_deposits || []) {
     const hit = first('SELECT id FROM fixed_deposits WHERE bank = ? AND principal = ? AND start_date = ?', [fd.bank, Number(fd.principal), fd.start_date])
     saveFixedDeposit({ ...fd, id: hit ? hit.id : undefined }); out.fixed_deposits++
+  }
+  if (p.ppf && typeof p.ppf === 'object') {
+    for (const d of p.ppf.deposits || []) {
+      const hit = first('SELECT id FROM ppf_deposits WHERE deposit_date = ? AND amount_inr = ?', [d.date, Number(d.amount_inr)])
+      savePpfDeposit({ id: hit ? hit.id : undefined, deposit_date: d.date, amount_inr: d.amount_inr, note: d.note }); out.ppf_deposits++
+    }
+    for (const r of p.ppf.rates || []) { setPpfRate(r.quarter_start, r.rate_pct); out.ppf_rates++ }
   }
   for (const s of p.splitwise || []) { saveSplitwise(s.person, s.amount_inr, s.note || ''); out.splitwise++ }
   for (const t of p.trades || []) { recordTrade(t); out.trades++ }
@@ -319,6 +326,25 @@ export function ingestStanding(p) {
 }
 
 export const deleteFixedDeposit = (id) => write((run) => run('DELETE FROM fixed_deposits WHERE id = ?', [id]))
+
+/** Add a PPF deposit, or change one (any amount, any date) when it carries an id. */
+export function savePpfDeposit({ id, deposit_date, amount_inr, note }) {
+  if (!DATE.test(deposit_date || '')) fail('PPF deposit date must be YYYY-MM-DD')
+  if (!isNum(amount_inr) || Number(amount_inr) <= 0) fail('PPF deposit amount must be a positive number')
+  write((run) => {
+    if (id) run('UPDATE ppf_deposits SET deposit_date = ?, amount_inr = ?, note = ? WHERE id = ?', [deposit_date, Number(amount_inr), note || null, id])
+    else run('INSERT INTO ppf_deposits (deposit_date, amount_inr, note) VALUES (?,?,?)', [deposit_date, Number(amount_inr), note || null])
+  })
+}
+export const deletePpfDeposit = (id) => write((run) => run('DELETE FROM ppf_deposits WHERE id = ?', [id]))
+
+/** The rate the government set for one quarter of the financial year. */
+export function setPpfRate(quarter_start, rate_pct) {
+  if (!/^\d{4}-(01|04|07|10)-01$/.test(quarter_start || '')) fail(`PPF quarter_start must be the first day of Jan, Apr, Jul or Oct (YYYY-MM-01), got ${JSON.stringify(quarter_start)}`)
+  if (!isNum(rate_pct) || Number(rate_pct) <= 0 || Number(rate_pct) > 20) fail('PPF rate must be a percentage, like 7.1')
+  write((run) => run('INSERT INTO ppf_rates (quarter_start, rate_pct) VALUES (?, ?) ON CONFLICT(quarter_start) DO UPDATE SET rate_pct = excluded.rate_pct', [quarter_start, Number(rate_pct)]))
+}
+export const deletePpfRate = (qs) => write((run) => run('DELETE FROM ppf_rates WHERE quarter_start = ?', [qs]))
 
 export function saveSplitwise(person, amount, note = '') {
   if (!person) fail('person is required')

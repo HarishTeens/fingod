@@ -76,7 +76,8 @@ modern browser.
 - **Capital gains, optionally.** Give your agent a tradebook or a mutual fund statement and fingod matches
   every lot first-in first-out: exact holding periods, short- versus long-term gains by financial year, and an
   estimate of the tax (an estimate, not advice).
-- **Everything else you own.** NPS, PPF, property, physical gold and loans, typed in once and counted in your
+- **PPF.** Deposits and the quarterly rate, valued the way the passbook does it (interest on the lowest balance after the 5th, credited each 31 March).
+- **Everything else you own.** NPS, property, physical gold and loans, typed in once and counted in your
   total net worth.
 - **Allocation against targets.** Set a target per asset and see the drift and what to buy or sell.
 - **Realised profit.** Sales are detected by diffing checkpoints; you confirm the sale price and it is

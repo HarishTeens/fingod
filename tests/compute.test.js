@@ -6,7 +6,7 @@ import { accrued, value as fdValue } from '../src/compute/fd.js'
 import { allocate } from '../src/compute/allocation.js'
 import { returns, shares, fixedDepositReturns } from '../src/compute/returns.js'
 import { summarise, byPeriod, findDisposals } from '../src/compute/realised.js'
-import { expenseByLabel, labelNets } from '../src/compute/expenses.js'
+import { expenseByLabel, expenseByCategory, labelNets } from '../src/compute/expenses.js'
 
 const P = (o) => ({ fx_rate: 1, currency: 'INR', ...o })
 
@@ -258,4 +258,20 @@ test('expenses: a modifier label steps aside, and a net-positive label is clampe
   const { series } = expenseByLabel(txns, labels, 'month')
   assert.equal(series[0].segments.Freelance, undefined)
   assert.equal(series[0].net_inflow, 5900)
+})
+
+test('spend by category nets a refund against its category and clamps income to zero', () => {
+  const t = (id, amount_inr, category_top) => ({ id, txn_date: '2026-05-10', amount_inr, category: category_top, category_top, is_transfer: false })
+  const r = expenseByCategory([t('1', -1000, 'Food'), t('2', 300, 'Food'), t('3', -500, 'Transport'), t('4', 50000, 'Income')], new Map(), 'month')
+  assert.deepEqual(r.series[0].segments, { Food: 700, Transport: 500 })
+  assert.equal(r.series[0].total, 1200)
+  assert.equal(r.series[0].net_inflow, 50000) // reported, not dropped
+})
+
+test('realised by "all" is one bar holding the whole book', () => {
+  const T = (symbol, exit_date, invested_inr, realised_inr) => ({ sleeve: 'in_equity', symbol, exit_date, invested_inr, realised_inr })
+  const a = byPeriod([T('X', '2025-03-01', 1000, 200), T('Y', '2026-07-15', 1000, -50)], 'all')
+  assert.equal(a.length, 1)
+  assert.equal(a[0].realised, 150); assert.equal(a[0].trades, 2); assert.equal(a[0].winners, 1)
+  assert.deepEqual(byPeriod([], 'all'), [])
 })

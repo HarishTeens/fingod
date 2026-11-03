@@ -20,7 +20,7 @@ function hero(series) {
     <div>
       <div class="hero-label">Total net worth</div>
       <div class="hero-figure" style="font-size:32px">${moneyExact(latest.total)}</div>
-      <div class="hero-secondary">${compact(latest.epf)} EPF · ${compact(latest.fd_accrued)} accrued FD interest · ${compact(latest.splitwise)} owed to you${latest.other_assets ? ` · ${compact(latest.other_assets)} other assets` : ''}${latest.loans ? ` · ${compact(latest.loans)} in loans` : ''}</div>
+      <div class="hero-secondary">${compact(latest.epf)} EPF · ${latest.ppf ? `${compact(latest.ppf)} PPF · ` : ''}${compact(latest.fd_accrued)} accrued FD interest · ${compact(latest.splitwise)} owed to you${latest.other_assets ? ` · ${compact(latest.other_assets)} other assets` : ''}${latest.loans ? ` · ${compact(latest.loans)} in loans` : ''}</div>
       <div class="hero-secondary" style="color:var(--muted);font-size:13px">Cash ${compact(latest.cash)} · cards ${compact(latest.credit_card)} outstanding · as of ${shortDate(latest.as_of_date)}</div>
     </div>
   </div></section>`

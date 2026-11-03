@@ -1,4 +1,4 @@
-import { connectorStatus, checkpoints, fixedDeposits, splitwise, targets, transactionCount, ledgerRows, manualAssets, benchmarkHistory } from '../repo.js'
+import { connectorStatus, checkpoints, fixedDeposits, ppfDeposits, splitwise, targets, transactionCount, ledgerRows, manualAssets, benchmarkHistory } from '../repo.js'
 import { exportBytes, importBytes, reset, getSetting } from '../db.js'
 import { syncInbox, ingestAny, inboxFailures, IngestError } from '../ingest.js'
 import { checkpointPrompt } from '../prompts.js'
@@ -28,6 +28,7 @@ export function render(el) {
         <tr><td class="name">Benchmark history</td><td class="num">${(() => { const h = benchmarkHistory(), ks = Object.keys(h); return ks.length ? ks.map((k) => `${k === 'sp500' ? 'S&P 500' : 'Nifty 50'} ${h[k].length} days`).join(' · ') : '—' })()}</td></tr>
         <tr><td class="name">Other assets and loans</td><td class="num">${new Set(manualAssets().map((a) => `${a.kind}|${a.name}`)).size || '—'}</td></tr>
         <tr><td class="name">Fixed deposits</td><td class="num">${fixedDeposits().length}</td></tr>
+        <tr><td class="name">PPF deposits</td><td class="num">${ppfDeposits().length}</td></tr>
         <tr><td class="name">Splitwise people</td><td class="num">${splitwise().length}</td></tr>
         <tr><td class="name">Bitcoin (manual)</td><td class="num">${st.btc.ok ? 'set' : '—'}</td></tr>
         <tr><td class="name">Allocation targets${getSetting('target_allocation', null) === null ? ' <span class="muted">(defaults, not set yet)</span>' : ''}</td><td class="num">${Object.entries(targets()).map(([k, v]) => `${esc(sleeveLabel(k))} ${v}%`).join(' · ')}</td></tr>

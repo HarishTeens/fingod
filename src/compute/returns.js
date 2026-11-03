@@ -6,6 +6,7 @@ import { num, money, sum, pct } from './num.js'
 import { holdingValue } from './networth.js'
 import { diff, bySleeve } from './qtydiff.js'
 import { accrued, isLive, value as fdValue } from './fd.js'
+import { balance as ppfBalance } from './ppf.js'
 
 /** Largest-remainder rounding, so a column of shares totals exactly 100. */
 export function shares(values) {
@@ -88,6 +89,24 @@ export function fixedDepositReturns(fds, at, prevAt) {
     const prevPrincipal = sum(fds.filter((f) => isLive(f, prevAt)).map((f) => num(f.principal)))
     const flow = money(sum(live.map((f) => num(f.principal))) - prevPrincipal)
     const delta = money(value - prevValue)
+    Object.assign(out, { delta, flow, fx: 0, market: money(delta - flow) })
+  }
+  return out
+}
+
+/** The PPF sleeve, one row for the account: growth is interest (market), and a
+ * deposit is money you added (flow). */
+export function ppfReturns(deposits, rates, at, prevAt) {
+  const b = ppfBalance(deposits, rates, at)
+  const rows = b.deposited ? [{
+    sleeve: 'ppf', symbol: 'PPF', name: `PPF · ${deposits.filter((d) => d.deposit_date <= at).length} deposits`,
+    value: b.value, invested: b.deposited, unrealised: b.interest, return_pct: pct(b.interest, b.deposited),
+  }] : []
+  const out = { sleeve: 'ppf', value: b.value, invested: b.deposited, unrealised: b.interest, return_pct: pct(b.interest, b.deposited), partial: false, holdings: rows, market: null, flow: null, fx: null, delta: null }
+  if (prevAt) {
+    const p = ppfBalance(deposits, rates, prevAt)
+    const flow = money(b.deposited - p.deposited)
+    const delta = money(b.value - p.value)
     Object.assign(out, { delta, flow, fx: 0, market: money(delta - flow) })
   }
   return out

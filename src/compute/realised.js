@@ -31,6 +31,10 @@ export function summarise(trades) {
 
 /** Bucketed on the EXIT date: held across a year-end, sold in 2026, all of it is 2026. */
 export function byPeriod(trades, granularity = 'month') {
+  if (granularity === 'all') {
+    const s = summarise(trades)
+    return trades.length ? [{ period: 'All time', realised: s.realised, invested: s.invested, trades: s.trades, winners: s.winners }] : []
+  }
   const buckets = new Map()
   for (const t of trades) {
     const k = granularity === 'year' ? `${t.exit_date.slice(0, 4)}-01-01` : `${t.exit_date.slice(0, 7)}-01`
