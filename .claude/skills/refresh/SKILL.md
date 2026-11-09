@@ -62,7 +62,11 @@ Weekly, or whenever asked. **It never polls.**
 3. **Find the last transaction date.** The newest `txn_date` across `data/transactions/*.json`
    (`jq -r '.transactions[].txn_date' data/transactions/*.json | sort | tail -1`). None means a first
    backfill — see §2b.
-4. **Read `data/config.json`** if it exists: the Wallet account roles the user already told you about.
+4. **Read `data/config.json`** if it exists: the Wallet account roles the user already told you about, and
+   `exclude_holdings`, positions (or part of one) the user holds for someone else. For each entry, subtract its
+   `qty` from that holding's source quantity before you write it (no `qty` means the whole position), and drop
+   the row if nothing is left. Keep the source's `price` per unit; it is not recomputed from the smaller
+   quantity. Say which holdings you trimmed. Never ask again, and never write the excluded part anywhere.
 5. **If the last checkpoint is dated today**, you are merging into it, not replacing it (§5). Say so.
 
 Fixed deposits, Splitwise and target allocation are **standing rows**, entered during setup. Do not collect
@@ -107,8 +111,23 @@ INF732E01037  (LIQUIDBEES)  → debt
 ### `get_mf_holdings` → `in_mf`
 
 `tradingsymbol` **is** the ISIN, so it fills both `symbol` and `isin`. `fund` → `name`,
-`quantity` → `qty`, `last_price` → `price` (that is the NAV), `average_price` → `avg_cost`,
-`invested_inr` = `round(qty × average_price, 2)`. Ignore `pnl` and `last_price_date`: both are dead.
+`quantity` → `qty`, `average_price` → `avg_cost`, `invested_inr` = `round(qty × average_price, 2)`.
+Ignore `pnl` and `last_price_date`: both are dead.
+
+**`price` (the NAV) comes from AMFI, not from Kite's `last_price`.** Kite's feed runs behind: on 2026-11-09 its NAVs
+were 1.6–2.8% under the latest on four of five funds, while AMFI's NAVs for 6 Nov reproduced the
+Zerodha dashboard to the paisa. AMFI's daily file is public and official, and it is matched on ISIN:
+
+```
+curl -sL https://portal.amfiindia.com/spages/NAVAll.txt | grep -E 'ISIN1|ISIN2|…'
+# Scheme Code ; ISIN Div Payout/ISIN Growth ; ISIN Div Reinvestment ; Scheme Name ; Plan ; Option ; Net Asset Value ; Date
+```
+
+Put the held ISINs in the `grep` so only a handful of lines come back (the file is about 18,000 lines; never
+read it whole, and never save it: it is not data for `data/`). Match an ISIN against either of the two ISIN
+columns. `price` is the Net Asset Value, and its date is `DD-Mon-YYYY`, normally the last business day. Tell the
+user that date. The old `www.amfiindia.com` address only redirects, hence `-L`. If a fund is missing from the
+file, or the file cannot be fetched, keep Kite's `last_price` for that fund, say so, and carry on.
 
 ### `get_margins` → idle broker cash
 
@@ -242,6 +261,10 @@ Per row: `investment_code` → `symbol`, `investment` → `name`, `total_units` 
 `unit_price` is in **rupees** even for US stocks — do not use it. Deriving the USD price gives exact
 cents and an identical rate on every row, which is what keeps `qty × price × fx` equal to INDmoney's own
 rupee total. Never use an external FX quote.
+
+Apply `exclude_holdings` (§0, item 4) after deriving the price from the full row: `qty` is `total_units` minus
+the excluded quantity, `price` is unchanged. The row then sums to less than INDmoney's own total by exactly the
+excluded value, which is expected.
 
 **Never send `invested_amount` as `invested_inr`.** It back-converts the USD cost at a flat rate
 whatever the purchase date, which misstates cost and inflates the gain. Omit `invested_inr` on US

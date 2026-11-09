@@ -201,7 +201,7 @@ export function cashflowView() {
   if (!transactionCount()) return null
   const series = networthSeries()
   const latest = series.at(-1)
-  return cashflow(transactionsAll(), labelsMap(), { asOf: latest ? latest.as_of_date : null, liquid: latest ? latest.liquid : null, total: latest ? latest.total : null })
+  return cashflow(transactionsAll(), labelsMap(), { asOf: latest ? latest.as_of_date : null, liquid: latest ? latest.liquid : null, total: latest ? latest.total : null, runway: getSetting('runway', null) })
 }
 
 /** Dividends and interest received over the trailing 12 months, from Wallet. */

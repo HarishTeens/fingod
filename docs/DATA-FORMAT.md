@@ -178,12 +178,28 @@ Nothing needs it to run.
 
 ## Config
 
-`data/config.json` is optional and **only your agent reads it**: a place to remember which Wallet
-accounts you said are cash, credit cards, or to ignore, so it doesn't ask again.
+`data/config.json` is optional and personal to you, like everything in `data/`. Your agent reads most of it: which
+Wallet accounts you said are cash, credit cards, or to ignore, so it doesn't ask again, and positions you hold on
+someone else's behalf, so they never count as yours. The **app** reads one key, `runway`.
 
 ```jsonc
-{ "wallet_account_roles": { "<account id>": { "name": "Bank A", "role": "cash" } } }  // cash | credit_card | ignore
+{
+  "wallet_account_roles": { "<account id>": { "name": "Bank A", "role": "cash" } },  // cash | credit_card | ignore
+  "exclude_holdings": [ { "sleeve": "us_equity", "symbol": "ACME", "qty": 0.5, "note": "bought for a friend" } ],
+  "runway": { "labels": ["Personal", "House"], "months": 3 }                          // months is optional: 1 to 12, default 3
+}
 ```
+
+For each `exclude_holdings` entry the agent subtracts `qty` from the source's quantity before writing a
+checkpoint; leave `qty` out to ignore the whole position. A checkpoint therefore never contains the excluded
+shares, and neither does net worth.
+
+`runway` narrows what runway divides by. Without it, runway is net worth ÷ your average monthly spend on
+everything. With it, only the Wallet labels you list count, which suits someone who expects to cut trips and one-offs
+and treats the rest as their ongoing cost of living. The average is over the last `months` complete months and uses
+the same label netting as the spend chart (a record with several labels shares its amount evenly between them, and
+refunds come off the label they came back under), so a bar and the figure agree. The savings rate and "Spend a
+month" still use all spending. Remove the key and runway goes back to all spending.
 
 ## Standing rows (optional)
 
