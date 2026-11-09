@@ -179,11 +179,19 @@ Nothing needs it to run.
 ## Config
 
 `data/config.json` is optional and **only your agent reads it**: a place to remember which Wallet
-accounts you said are cash, credit cards, or to ignore, so it doesn't ask again.
+accounts you said are cash, credit cards, or to ignore, so it doesn't ask again. It also lists positions you
+hold on someone else's behalf, so they never count as yours.
 
 ```jsonc
-{ "wallet_account_roles": { "<account id>": { "name": "Bank A", "role": "cash" } } }  // cash | credit_card | ignore
+{
+  "wallet_account_roles": { "<account id>": { "name": "Bank A", "role": "cash" } },  // cash | credit_card | ignore
+  "exclude_holdings": [ { "sleeve": "us_equity", "symbol": "ACME", "qty": 0.5, "note": "bought for a friend" } ]
+}
 ```
+
+For each `exclude_holdings` entry the agent subtracts `qty` from the source's quantity before writing a
+checkpoint; leave `qty` out to ignore the whole position. A checkpoint therefore never contains the excluded
+shares, and neither does net worth.
 
 ## Standing rows (optional)
 

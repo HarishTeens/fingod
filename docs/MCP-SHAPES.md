@@ -119,8 +119,21 @@ into the `gold` and `debt` sleeves. Overnight-rate ETFs are cash parked in the d
  "quantity": 1000.5, "average_price": 48.1, "last_price": 52.3, "pnl": 0, "last_price_date": ""}
 ```
 
-`tradingsymbol` **is** the ISIN. `fund` → `name`, `quantity` → `qty`, `last_price` → `price` (the NAV).
+`tradingsymbol` **is** the ISIN. `fund` → `name`, `quantity` → `qty`, `average_price` → `avg_cost`.
 `pnl` and `last_price_date` are dead fields.
+
+`last_price` is **not** used for the NAV: it lags. On 2026-11-09 it was behind by 1.6–2.8% on four of five funds,
+while AMFI's published NAV for 6 Nov matched the Zerodha dashboard to the paisa.
+The NAV comes from AMFI's public daily file instead, matched on ISIN:
+
+```
+https://portal.amfiindia.com/spages/NAVAll.txt     # follow redirects: the old www.amfiindia.com path moved
+Scheme Code;ISIN Div Payout/ ISIN Growth;ISIN Div Reinvestment;Scheme Name;Plan;Option;Net Asset Value;Date
+122639;INF000F01001;-;Example Midcap Fund;Direct Plan;Growth;52.3041;06-Nov-2026
+```
+
+Units and cost still come from Kite. If a fund is not in the file, or the file cannot be fetched, Kite's
+`last_price` stands in and the refresh says so.
 
 ### `get_margins` — idle broker cash
 
@@ -190,6 +203,10 @@ FX quote would break that constraint.
 `invested_amount` back-converts the USD cost at a **flat rate** regardless of purchase date, which
 misstates cost and inflates the gain, so fingod ignores it. US rows carry no cost basis unless the
 user supplies a true rupee figure.
+
+Shares held for someone else are listed under `exclude_holdings` in `data/config.json` (see DATA-FORMAT.md).
+The agent subtracts that `qty` from `total_units` and keeps `price` as derived above, so the sleeve then falls
+short of INDmoney's own total by exactly the excluded value.
 
 ### `networth_holdings(EPF)`
 
