@@ -42,13 +42,15 @@ function cashflowCard() {
   if (!c || !c.months.length) return ''
   const stat = (label, value, sub = '') => `<div><div class="hero-label">${label}</div><div class="hero-figure">${value}</div>${sub ? `<div class="hero-secondary" style="margin-top:2px;font-size:13px">${sub}</div>` : ''}</div>`
   const w = c.window
+  const b = c.runway_basis
+  const runwayBasis = b ? `${compact(b.avg_spend)} a month (${b.labels.map(esc).join(' + ')} only)` : 'monthly spend'
   const pg = paginate('cashflow-months', c.months.slice().reverse(), { size: 10 })
   return `<section class="card"><header><h2>Savings and runway</h2></header>
     ${w.months_used ? `<div class="grid stats">
       ${stat('Savings rate', c.savings_rate_pct === null ? '—' : `${plain(c.savings_rate_pct, 1)}%`, `of income, last ${w.months_used} month${w.months_used === 1 ? '' : 's'}`)}
       ${stat('Spend a month', compact(c.avg_spend), `income ${compact(c.avg_income)} a month`)}
-      ${stat('Runway', c.runway_months === null ? '—' : `${plain(c.runway_months, 1)} months`, 'liquid net worth ÷ monthly spend')}
-      ${stat('Runway, all-in', c.runway_months_total === null ? '—' : `${plain(c.runway_months_total, 1)} months`, 'total net worth ÷ monthly spend')}
+      ${stat('Runway', c.runway_months === null ? '—' : `${plain(c.runway_months, 1)} months`, `liquid net worth ÷ ${runwayBasis}`)}
+      ${stat('Runway, all-in', c.runway_months_total === null ? '—' : `${plain(c.runway_months_total, 1)} months`, `total net worth ÷ ${runwayBasis}`)}
     </div>` : '<p class="note" style="margin-top:0">The headline figures need one full month of Wallet transactions before the current one.</p>'}
     <div style="margin-top:16px">${scrollBox(`<table class="data"><thead><tr><th>Month</th><th class="num">Income</th><th class="num">Spend</th><th class="num">Saved</th><th class="num">Rate</th><th class="num">Invested</th></tr></thead><tbody>
       ${pg.rows.map((m) => `<tr><td class="name">${esc(monthLabel(m.month))}</td><td class="num">${compact(m.income)}</td><td class="num">${compact(m.spend)}</td><td class="num">${delta(m.saved)}</td><td class="num">${m.savings_rate_pct === null ? '—' : `${plain(m.savings_rate_pct, 0)}%`}</td><td class="num">${compact(m.invested)}</td></tr>`).join('')}

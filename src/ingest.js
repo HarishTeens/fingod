@@ -180,24 +180,44 @@ export function ingestBenchmarks(payload) {
   return { benchmark_days: n }
 }
 
+/** The runway setting in data/config.json: the labels you treat as your ongoing cost of living. */
+export function validateRunway(r) {
+  if (!r || typeof r !== 'object' || Array.isArray(r)) fail('runway must be an object like {"labels": ["Personal", "House"]}')
+  if (!Array.isArray(r.labels) || !r.labels.length || r.labels.length > 20 || r.labels.some((l) => typeof l !== 'string' || !l.trim())) fail('runway.labels must be a list of 1 to 20 label names')
+  if (r.months !== undefined && !(Number.isInteger(r.months) && r.months >= 1 && r.months <= 12)) fail('runway.months must be a whole number from 1 to 12')
+  return { labels: [...new Set(r.labels.map((l) => l.trim()))], ...(r.months ? { months: r.months } : {}) }
+}
+
+/** data/config.json is mostly for the agent (account roles, excluded holdings). The app reads only
+ * `runway` from it, and a file without one clears the setting, so removing the key puts runway
+ * back on all spending. */
+function ingestConfig(p) {
+  if (p.runway === undefined) { write((run) => run("DELETE FROM settings WHERE key = 'runway'")); return { runway: false } }
+  const r = validateRunway(p.runway)
+  setSetting('runway', r)
+  return { runway: true, runway_labels: r.labels.length }
+}
+
 /** A file's kind, from its contents. */
 export function classify(payload) {
   if (payload && Array.isArray(payload.holdings) && payload.as_of_date) return 'checkpoint'
   if (payload && !Array.isArray(payload) && Array.isArray(payload.ledger)) return 'ledger'
   if (payload && !Array.isArray(payload) && !payload.as_of_date && payload.benchmarks && typeof payload.benchmarks === 'object' && Object.values(payload.benchmarks).every(Array.isArray)) return 'benchmarks'
   if (payload && !Array.isArray(payload) && ['fixed_deposits', 'ppf', 'splitwise', 'trades', 'target_allocation', 'assets', 'liabilities'].some((k) => k in payload)) return 'standing'
+  if (payload && !Array.isArray(payload) && !payload.as_of_date && ['runway', 'wallet_account_roles', 'exclude_holdings'].some((k) => k in payload)) return 'config'
   if (payload && (Array.isArray(payload.transactions) || Array.isArray(payload))) return 'transactions'
   return null
 }
 
 export function ingestAny(payload) {
   const kind = classify(payload)
+  if (kind === 'config') return { kind, ...ingestConfig(payload) }
   if (kind === 'checkpoint') return { kind, ...ingestCheckpoint(payload) }
   if (kind === 'transactions') return { kind, ...ingestTransactions(payload) }
   if (kind === 'ledger') return { kind, ...ingestLedger(payload) }
   if (kind === 'benchmarks') return { kind, ...ingestBenchmarks(payload) }
   if (kind === 'standing') return { kind, ...ingestStanding(payload) }
-  fail('not a fingod file: expected a checkpoint ({as_of_date, holdings}), {transactions}, {ledger}, {benchmarks} or standing rows')
+  fail('not a fingod file: expected a checkpoint ({as_of_date, holdings}), {transactions}, {ledger}, {benchmarks}, standing rows or a config')
 }
 
 /** Pull in everything the agent has dropped into data/. Needs serve.py (or any
@@ -233,6 +253,8 @@ async function listInbox() {
       if (head && head.ok) files.push({ path: `${dir}/${n}`, size: head.headers.get('content-length') || '0', mtime: head.headers.get('last-modified') || '0' })
     }
   }
+  const cfg = await fetch('data/config.json', { method: 'HEAD', cache: 'no-store' }).catch(() => null)
+  if (cfg && cfg.ok) { reachable = true; files.push({ path: 'config.json', size: cfg.headers.get('content-length') || '0', mtime: cfg.headers.get('last-modified') || '0' }) }
   if (!reachable) { // no subfolders yet: is there a server at all?
     try { reachable = (await fetch('data/README.md', { cache: 'no-store' })).ok } catch { reachable = false }
   }
@@ -244,7 +266,7 @@ export async function syncInbox() {
   if (!available) return { available: false, imported: [], errors: [] }
 
   const imported = [], errors = []
-  const files = listed.filter((f) => f.path.endsWith('.json') && /^(checkpoints|standing|transactions|ledger|benchmarks)\//.test(f.path)).sort((a, b) => a.path.localeCompare(b.path))
+  const files = listed.filter((f) => f.path.endsWith('.json') && (f.path === 'config.json' || /^(checkpoints|standing|transactions|ledger|benchmarks)\//.test(f.path))).sort((a, b) => a.path.localeCompare(b.path))
   for (const f of files) {
     const fingerprint = `${f.size}:${f.mtime}`
     const seen = first('SELECT fingerprint FROM imported_files WHERE path = ?', [f.path])

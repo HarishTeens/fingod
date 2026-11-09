@@ -175,6 +175,33 @@ test('cashflow: savings rate and runway come from complete months, and agree wit
   assert.equal(c.months.find((m) => m.month === '2026-08-01').invested, 20000)
 })
 
+test('cashflow: runway can count only the labels you name, netted exactly as the chart nets them', () => {
+  const t = (id, txn_date, amount_inr, extra = {}) => ({ id, txn_date, amount_inr, category: 'Food & Drinks', category_top: 'Food & Drinks', is_transfer: 0, ...extra })
+  const txns = [], labels = new Map()
+  const add = (tx, l) => { txns.push(tx); if (l) labels.set(tx.id, l) }
+  for (const m of ['2026-07', '2026-08', '2026-09']) {
+    add(t(`${m}-sal`, `${m}-01`, 100000, { category: 'Wage', category_top: 'Income' }))
+    add(t(`${m}-p`, `${m}-05`, -10000), ['Personal'])
+    add(t(`${m}-h`, `${m}-06`, -20000), ['House'])
+    add(t(`${m}-trip`, `${m}-07`, -60000), ['Trip'])
+    add(t(`${m}-ot`, `${m}-08`, -10000), ['House', 'One-Time']) // shared evenly between its labels, as the chart does: 5,000 is House
+  }
+  add(t('sep-extra', '2026-09-09', -7000), ['Personal'])
+  const base = { asOf: '2026-10-20', liquid: 700000, total: 1400000 }
+  const all = cashflow(txns, labels, base)
+  assert.equal(all.runway_basis, null)
+  assert.equal(all.runway_months, 6.84, 'with no runway option it divides by all spending, as before') // 700000 / ((100000 + 100000 + 107000) / 3)
+  const c = cashflow(txns, labels, { ...base, runway: { labels: ['Personal', 'House'] } })
+  assert.equal(c.avg_spend, all.avg_spend, 'the headline spend does not change')
+  assert.equal(c.runway_basis.avg_spend, 37333.33) // (35000 + 35000 + 42000) / 3
+  assert.deepEqual(c.runway_basis.labels, ['Personal', 'House'])
+  assert.equal(c.runway_months, 18.75)
+  assert.equal(c.runway_months_total, 37.5)
+  assert.equal(cashflow(txns, labels, { ...base, runway: { labels: ['Personal', 'House'], months: 1 } }).runway_months, 16.67) // September alone: 700000 / 42000
+  assert.equal(cashflow(txns, labels, { ...base, runway: { labels: ['Nothing'] } }).runway_basis.avg_spend, 0)
+  assert.equal(cashflow(txns, labels, { ...base, runway: { labels: ['Nothing'] } }).runway_months, null, 'no spend at all gives no runway, not an infinite one')
+})
+
 test('cashflow: a refund carrying a label reduces spend and is not income', () => {
   const labels = new Map([['r', ['Trip']], ['s', ['Trip']]])
   const txns = [

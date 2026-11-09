@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { validateCheckpoint, classify, IngestError } from '../src/ingest.js'
+import { validateCheckpoint, validateRunway, classify, IngestError } from '../src/ingest.js'
 
 const ok = () => ({
   as_of_date: '2026-10-29', usd_inr: 90,
@@ -43,6 +43,15 @@ test('files are classified by what they contain', () => {
   assert.equal(classify({ transactions: [] }), 'transactions')
   assert.equal(classify([{ id: 'x' }]), 'transactions')
   assert.equal(classify({ hello: 'world' }), null)
+})
+
+test('data/config.json is recognised, and its runway setting is checked', () => {
+  assert.equal(classify({ runway: { labels: ['Personal'] } }), 'config')
+  assert.equal(classify({ wallet_account_roles: {}, exclude_holdings: [] }), 'config')
+  assert.deepEqual(validateRunway({ labels: [' Personal ', 'House', 'House'], months: 6 }), { labels: ['Personal', 'House'], months: 6 })
+  assert.deepEqual(validateRunway({ labels: ['House'] }), { labels: ['House'] })
+  for (const bad of [null, [], { labels: [] }, { labels: 'House' }, { labels: [''] }, { labels: ['A'], months: 0 }, { labels: ['A'], months: 2.5 }, { labels: ['A'], months: 13 }])
+    assert.throws(() => validateRunway(bad), IngestError)
 })
 
 test('standing-row files are recognised, and a checkpoint may carry its own splitwise history', () => {
